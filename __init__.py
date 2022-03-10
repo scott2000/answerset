@@ -269,6 +269,9 @@ def bad(s: str) -> str:
 def missed(s: str) -> str:
     return f"<span class=typeMissed>{html.escape(s)}</span>"
 
+def not_code(s: str) -> str:
+    return f"</code>{s}<code id=typeans>"
+
 def renderDiffs(given, correct, givenElems, correctElems):
     """Create the diff comparison strings for each part."""
 
@@ -285,6 +288,7 @@ def renderDiffs(given, correct, givenElems, correctElems):
     given = group_combining(given)
     correct = group_combining(correct)
 
+    hasError = False
     givenElem = ''
     correctElem = ''
 
@@ -296,6 +300,7 @@ def renderDiffs(given, correct, givenElems, correctElems):
     for i, j, cnt in s.get_matching_blocks():
         # Check for bad text in "given"
         if givenIndex < i:
+            hasError = True
             givenElem += bad(''.join(given[givenIndex:i]))
 
         # Check for missing text in "correct"
@@ -304,6 +309,7 @@ def renderDiffs(given, correct, givenElems, correctElems):
 
             # If completely missing in "given", add hyphen
             if givenIndex == i:
+                hasError = True
                 givenElem += bad('-')
 
         if not cnt:
@@ -318,11 +324,14 @@ def renderDiffs(given, correct, givenElems, correctElems):
 
     # If a comment wasn't diffed, add it back
     if correctComment and not givenComment:
-        correctElem += html.escape(correctComment)
+        correctElem += not_code(html.escape(correctComment))
 
     # Append the diffs to the arrays
     givenElems.append(givenElem)
     correctElems.append(correctElem)
+
+    # Return whether there was any error or not
+    return hasError
 
 def correct(self, given: str, correct: str, **kwargs) -> str:
     """Display the corrections for a type-in answer."""
@@ -343,38 +352,44 @@ def correct(self, given: str, correct: str, **kwargs) -> str:
     correct = split_options(correct, sep)
 
     # Arrange the parts so that similar ones line up and render the diffs
+    hasError = False
     givenElems = []
     correctElems = []
     for given, correct in Arranger.arrange(given, correct):
         if not given:
             correctElems.append(missed(correct[0]) + correct[1])
         elif not correct:
+            hasError = True
             givenElems.append(bad(''.join(given)))
         else:
-            renderDiffs(given, correct, givenElems, correctElems)
+            hasError |= renderDiffs(given, correct, givenElems, correctElems)
 
     # Diff comments if they were given
     if givenComment:
         given = givenComment.strip()
         correct = correctComment.strip()
         if not correct:
+            hasError = True
             givenElems.append(bad(''.join(given)))
         else:
-            renderDiffs((given, ''), (correct, ''), givenElems, correctElems)
+            hasError |= renderDiffs(
+                    (given, ''), (correct, ''), givenElems, correctElems)
 
-    sep = html.escape(sep) + ' '
-    res = ''
+    sep = not_code(html.escape(sep) + ' ')
+    res = '<div><code id=typeans>'
 
-    # Combine the diffs for all "given" parts
-    start = True
-    for elem in givenElems:
-        if start:
-            start = False
-        else:
-            res += sep
-        res += elem
+    # Only show the given part if there was an error
+    if hasError:
+        # Combine the diffs for all "given" parts
+        start = True
+        for elem in givenElems:
+            if start:
+                start = False
+            else:
+                res += sep
+            res += elem
 
-    res += '<br><span id=typearrow>&darr;</span><br>'
+        res += '<br><span id=typearrow>&darr;</span><br>'
 
     # Combine the diffs for all "correct" parts
     start = True
@@ -387,9 +402,9 @@ def correct(self, given: str, correct: str, **kwargs) -> str:
 
     # If a comment wasn't diffed, add it back
     if correctComment and not givenComment:
-        res += html.escape(correctComment)
+        res += not_code(html.escape(correctComment))
 
-    res = f'<div><code id=typeans>{res}</code></div>'
+    res += '</code></div>'
 
     return res
 
