@@ -1,8 +1,8 @@
 # Answer Set
 
-Answer Set is an Anki add-on which gives better feedback for "type in the
-answer" style cards if there are multiple correct answers, and improves support
-for Indic scripts.
+Answer Set is an [Anki add-on](https://ankiweb.net/shared/info/1827331674)
+which gives better feedback for "type in the answer" style cards if there are
+multiple correct answers, and improves support for Indic scripts.
 
 ## Multiple Answers
 
