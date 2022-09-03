@@ -81,7 +81,7 @@ But if you type "mouse, cow" for `dog, cat, mouse (animals)`:
 This add-on is implemented as a monkey patch replacing only `Reviewer.correct`,
 which is responsible for generating the differences. Since it replaces this
 function, it is not guaranteed to work in future updates. I have tested it in
-Anki 2.1.40.
+Anki 2.1.40 through 2.1.54.
 
 The answer rearranging algorithm uses the
 [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
