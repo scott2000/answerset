@@ -4,6 +4,7 @@ import unicodedata as ucd
 import re
 
 from aqt.reviewer import Reviewer
+from anki.collection import Collection
 
 junk_re = re.compile(r"[-\s]")
 prefix_limit = 3
@@ -64,7 +65,7 @@ def adj_dist(a, b):
     b = b[prefix:]
 
     # Return distance adjusted for prefix length
-    return dist(a, b) + prefix_limit - min(prefix, prefix_limit)
+    return dist(a, b) + (prefix_limit - min(prefix, prefix_limit))
 
 class Arranger:
     def __init__(self, given, correct):
@@ -333,7 +334,7 @@ def renderDiffs(given, correct, givenElems, correctElems):
     # Return whether there was any error or not
     return hasError
 
-def correct(self, given: str, correct: str, **kwargs) -> str:
+def compare_answer(self, correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
 
     # Normalize using NFC to make comparison consistent
@@ -408,4 +409,11 @@ def correct(self, given: str, correct: str, **kwargs) -> str:
 
     return res
 
+def correct(self, given: str, correct: str, **kwargs) -> str:
+    return compare_answer(self, correct, given)
+
+# Up to Anki 2.1.54
 Reviewer.correct = correct
+
+# Anki 2.1.56+ (correction was moved to Rust backend)
+Collection.compare_answer = compare_answer
