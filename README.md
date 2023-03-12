@@ -4,10 +4,6 @@ Answer Set is an [Anki add-on](https://ankiweb.net/shared/info/1827331674)
 which gives better feedback for "type in the answer" style cards if there are
 multiple correct answers, and improves support for Indic scripts.
 
-Anki 2.1.56 improved the comparison algorithm (the annoying red dashes were
-removed thanks to @dae!), so this add-on may be less necessary for Anki 2.1.56+,
-but it still provides several other useful features.
-
 ## Multiple Answers
 
 If you try to have multiple answers in a "type in the answer" style card in
@@ -50,6 +46,8 @@ a, b, c; d, e, f
 
 Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
 
+Any HTML tags in the answer will be rendered as text.
+
 ### Comments
 
 Comments may be added to an answer choice using `[...]`. These comments will not
@@ -86,7 +84,7 @@ This add-on is implemented as a monkey patch replacing
 `Collection.compare_answer` (Anki 2.1.56+) or `Reviewer.correct` (up to Anki
 2.1.54), which are responsible for generating the differences. Since it replaces
 these functions, it is not guaranteed to work in future updates. I have tested
-it in Anki 2.1.40 through 2.1.56.
+it in Anki 2.1.40 through 2.1.60.
 
 The answer rearranging algorithm uses the
 [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
