@@ -46,8 +46,6 @@ a, b, c; d, e, f
 
 Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
 
-Any HTML tags in the answer will be rendered as text.
-
 ### Comments
 
 Comments may be added to an answer choice using `[...]`. These comments will not
@@ -84,7 +82,7 @@ This add-on is implemented as a monkey patch replacing
 `Collection.compare_answer` (Anki 2.1.56+) or `Reviewer.correct` (up to Anki
 2.1.54), which are responsible for generating the differences. Since it replaces
 these functions, it is not guaranteed to work in future updates. I have tested
-it in Anki 2.1.40 through 2.1.60.
+it in Anki 2.1.40 through 2.1.65.
 
 The answer rearranging algorithm uses the
 [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)

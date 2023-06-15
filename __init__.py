@@ -3,8 +3,10 @@ import html
 import unicodedata as ucd
 import re
 
+import aqt
 from aqt.reviewer import Reviewer
 from anki.collection import Collection
+from anki.utils import html_to_text_line
 
 junk_re = re.compile(r"[-\s]")
 prefix_limit = 3
@@ -334,7 +336,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
     # Return whether there was any error or not
     return has_error
 
-def compare_answer(self, correct: str, given: str) -> str:
+def compare_answer_no_html(correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
 
     # Normalize using NFC to make comparison consistent
@@ -410,7 +412,19 @@ def compare_answer(self, correct: str, given: str) -> str:
     return res
 
 def correct(self, given: str, correct: str, **kwargs) -> str:
-    return compare_answer(self, correct, given)
+    return compare_answer_no_html(correct, given)
+
+def compare_answer(self, correct: str, given: str) -> str:
+    # Strip AV tags if possible
+    try:
+        correct = aqt.mw.col.media.strip_av_tags(correct)
+    except:
+        pass
+
+    # Strip HTML tags
+    correct = html_to_text_line(correct)
+
+    return compare_answer_no_html(correct, given)
 
 # Up to Anki 2.1.54
 Reviewer.correct = correct
