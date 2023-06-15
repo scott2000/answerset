@@ -98,7 +98,7 @@ class Arranger:
 
         # Find the closest "correct" part
         closest = None
-        closestDist = max_dist
+        closest_dist = max_dist
         for j in range(len(self.correct)):
             # Skip "correct" parts which were already used
             if j in self.used:
@@ -106,9 +106,9 @@ class Arranger:
 
             # Update minimum distance
             d = self.get_dist(i, j)
-            if d < closestDist:
+            if d < closest_dist:
                 closest = j
-                closestDist = d
+                closest_dist = d
 
                 # A distance of 0 is an exact match
                 if d == 0:
@@ -116,7 +116,7 @@ class Arranger:
 
         # Remember the closest value and return the distance
         self.closest[i] = closest
-        return closestDist
+        return closest_dist
 
     def step(self):
         """
@@ -134,7 +134,7 @@ class Arranger:
 
         # Find closest pair of "given" and "correct"
         closest = None
-        closestDist = max_dist
+        closest_dist = max_dist
         for i in range(len(self.given)):
             # Skip "given" parts which are already assigned
             if i in self.assigned:
@@ -142,9 +142,9 @@ class Arranger:
 
             # Update minimum distance
             d = self.min_for(i)
-            if d < closestDist:
+            if d < closest_dist:
                 closest = i
-                closestDist = d
+                closest_dist = d
 
                 # A distance of 0 is an exact match
                 if d == 0:
@@ -273,66 +273,66 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
 
-def renderDiffs(given, correct, givenElems, correctElems):
+def render_diffs(given, correct, given_elems, correct_elems):
     """Create the diff comparison strings for each part."""
 
     # Separate comments from parts
-    given, givenComment = given
-    correct, correctComment = correct
+    given, given_comment = given
+    correct, correct_comment = correct
 
     # Only diff comments if they were given
-    if givenComment:
-        given += givenComment
-        correct += correctComment
+    if given_comment:
+        given += given_comment
+        correct += correct_comment
 
     # Group combining characters to give cleaner diffs
     given = group_combining(given)
     correct = group_combining(correct)
 
-    hasError = False
-    givenElem = ''
-    correctElem = ''
+    has_error = False
+    given_elem = ''
+    correct_elem = ''
 
-    givenIndex = 0
-    correctIndex = 0
+    given_index = 0
+    correct_index = 0
 
     # Iterate through matching blocks to render the diff
     s = difflib.SequenceMatcher(is_junk, given, correct, autojunk=False)
     for i, j, cnt in s.get_matching_blocks():
         # Check for bad text in "given"
-        if givenIndex < i:
-            hasError = True
-            givenElem += bad(''.join(given[givenIndex:i]))
+        if given_index < i:
+            has_error = True
+            given_elem += bad(''.join(given[given_index:i]))
 
         # Check for missing text in "correct"
-        if correctIndex < j:
-            correctElem += missed(''.join(correct[correctIndex:j]))
+        if correct_index < j:
+            correct_elem += missed(''.join(correct[correct_index:j]))
 
             # If completely missing in "given", add hyphen
-            if givenIndex == i:
-                hasError = True
-                givenElem += bad('-')
+            if given_index == i:
+                has_error = True
+                given_elem += bad('-')
 
         if not cnt:
             continue
 
-        givenIndex = i + cnt
-        correctIndex = j + cnt
+        given_index = i + cnt
+        correct_index = j + cnt
 
         # Add good text for both
-        givenElem += good(''.join(given[i:givenIndex]))
-        correctElem += good(''.join(correct[j:correctIndex]))
+        given_elem += good(''.join(given[i:given_index]))
+        correct_elem += good(''.join(correct[j:correct_index]))
 
     # If a comment wasn't diffed, add it back
-    if correctComment and not givenComment:
-        correctElem += not_code(html.escape(correctComment))
+    if correct_comment and not given_comment:
+        correct_elem += not_code(html.escape(correct_comment))
 
     # Append the diffs to the arrays
-    givenElems.append(givenElem)
-    correctElems.append(correctElem)
+    given_elems.append(given_elem)
+    correct_elems.append(correct_elem)
 
     # Return whether there was any error or not
-    return hasError
+    return has_error
 
 def compare_answer(self, correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
@@ -342,8 +342,8 @@ def compare_answer(self, correct: str, given: str) -> str:
     correct = ucd.normalize('NFC', correct)
 
     # Remove comments in parentheses
-    given, givenComment = split_comment(given, '(', ')')
-    correct, correctComment = split_comment(correct, '(', ')')
+    given, given_comment = split_comment(given, '(', ')')
+    correct, correct_comment = split_comment(correct, '(', ')')
 
     # Pick separator as ';' if one is used, otherwise ','
     sep = ';' if ';' in correct else ','
@@ -353,37 +353,37 @@ def compare_answer(self, correct: str, given: str) -> str:
     correct = split_options(correct, sep)
 
     # Arrange the parts so that similar ones line up and render the diffs
-    hasError = False
-    givenElems = []
-    correctElems = []
+    has_error = False
+    given_elems = []
+    correct_elems = []
     for given, correct in Arranger.arrange(given, correct):
         if not given:
-            correctElems.append(missed(correct[0]) + correct[1])
+            correct_elems.append(missed(correct[0]) + correct[1])
         elif not correct:
-            hasError = True
-            givenElems.append(bad(''.join(given)))
+            has_error = True
+            given_elems.append(bad(''.join(given)))
         else:
-            hasError |= renderDiffs(given, correct, givenElems, correctElems)
+            has_error |= render_diffs(given, correct, given_elems, correct_elems)
 
     # Diff comments if they were given
-    if givenComment:
-        given = givenComment.strip()
-        correct = correctComment.strip()
+    if given_comment:
+        given = given_comment.strip()
+        correct = correct_comment.strip()
         if not correct:
-            hasError = True
-            givenElems.append(bad(''.join(given)))
+            has_error = True
+            given_elems.append(bad(''.join(given)))
         else:
-            hasError |= renderDiffs(
-                    (given, ''), (correct, ''), givenElems, correctElems)
+            has_error |= render_diffs(
+                    (given, ''), (correct, ''), given_elems, correct_elems)
 
     sep = not_code(html.escape(sep) + ' ')
     res = '<div><code id=typeans>'
 
     # Only show the given part if there was an error
-    if hasError:
+    if has_error:
         # Combine the diffs for all "given" parts
         start = True
-        for elem in givenElems:
+        for elem in given_elems:
             if start:
                 start = False
             else:
@@ -394,7 +394,7 @@ def compare_answer(self, correct: str, given: str) -> str:
 
     # Combine the diffs for all "correct" parts
     start = True
-    for elem in correctElems:
+    for elem in correct_elems:
         if start:
             start = False
         else:
@@ -402,8 +402,8 @@ def compare_answer(self, correct: str, given: str) -> str:
         res += elem
 
     # If a comment wasn't diffed, add it back
-    if correctComment and not givenComment:
-        res += not_code(html.escape(correctComment))
+    if correct_comment and not given_comment:
+        res += not_code(html.escape(correct_comment))
 
     res += '</code></div>'
 
