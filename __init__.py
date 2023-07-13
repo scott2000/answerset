@@ -8,6 +8,7 @@ from aqt.reviewer import Reviewer
 from anki.collection import Collection
 from anki.utils import html_to_text_line
 
+space_re = re.compile(r" +")
 junk_re = re.compile(r"[-\s]")
 prefix_limit = 3
 max_dist = 0x7fffffff
@@ -185,7 +186,7 @@ class Arranger:
             pass
         return arranger.finalize()
 
-def split_comment(string, start, end):
+def split_comment(string: str, start: str, end: str) -> tuple[str, str]:
     """
     Find a comment delimited by "start" and "end" and remove it from the end of
     the string. The comment cannot be the whole string, and it must come at the
@@ -218,7 +219,7 @@ def split_comment(string, start, end):
 
     return string, ''
 
-def split_options(string, sep):
+def split_options(string: str, sep: str) -> list[tuple[str, str]]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
@@ -382,13 +383,22 @@ def render_diffs(given, correct, given_elems, correct_elems):
 def compare_answer_no_html(correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
 
+    # Replace consecutive spaces with a single space
+    given = space_re.sub(' ', given)
+    correct = space_re.sub(' ', correct)
+
     # Normalize using NFC to make comparison consistent
     given = ucd.normalize('NFC', given)
     correct = ucd.normalize('NFC', correct)
 
     # Remove comments in parentheses
-    given, given_comment = split_comment(given, '(', ')')
     correct, correct_comment = split_comment(correct, '(', ')')
+
+    # Only separate comment for given if present for correct
+    if correct_comment:
+        given, given_comment = split_comment(given, '(', ')')
+    else:
+        given_comment = ''
 
     # Pick separator as ';' if one is used, otherwise ','
     sep = ';' if ';' in correct else ','
@@ -414,12 +424,8 @@ def compare_answer_no_html(correct: str, given: str) -> str:
     if given_comment:
         given = given_comment.strip()
         correct = correct_comment.strip()
-        if not correct:
-            has_error = True
-            given_elems.append(bad(''.join(given)))
-        else:
-            has_error |= render_diffs(
-                    (given, ''), (correct, ''), given_elems, correct_elems)
+        has_error |= render_diffs(
+                (given, ''), (correct, ''), given_elems, correct_elems)
 
     sep = not_code(html.escape(sep) + ' ')
     res = '<div><code id=typeans>'
