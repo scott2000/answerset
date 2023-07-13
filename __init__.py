@@ -233,12 +233,12 @@ def split_options(string, sep):
 
     return stripped
 
-def is_combining(ch):
+def is_combining(ch: str) -> bool:
     """Check if a character is a Unicode combining mark."""
 
     return ucd.category(ch).startswith('M')
 
-def group_combining(string):
+def group_combining(string: str) -> list[str]:
     """Group combining characters with the previous character."""
 
     parts = []
@@ -260,7 +260,7 @@ def group_combining(string):
 
     return parts
 
-def is_junk(ch):
+def is_junk(ch: str):
     return len(ch) == 1 and re.match(junk_re, ch)
 
 def good(s: str) -> str:
@@ -274,6 +274,44 @@ def missed(s: str) -> str:
 
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
+
+def is_missing_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
+    """
+    Check if a missing segment is part of an alternative. An alternative is
+    a series of single words separated by slashes, which allows the user to
+    pick any one of the words. If a missing segment is part of an alternative,
+    no error should be reported.
+    """
+
+    if not segment:
+        return False
+
+    first, last = segment[0], segment[-1]
+
+    # Missing alternative segment must start or end with '/'
+    if first != '/' and last != '/':
+        return False
+
+    # There can be no spaces inside the alternative
+    if ' ' in segment:
+        return False
+
+    # First character must be either '/' or alphabetic
+    if first != '/' and not first.isalpha():
+        return False
+
+    # Last character must be either '/' or alphabetic
+    if last != '/' and not last.isalpha():
+        return False
+
+    expectAlphaBefore = first == '/'
+    expectAlphaAfter = last == '/'
+
+    # There should be an alphabetic character only next to slashes
+    return alphaBefore == expectAlphaBefore and alphaAfter == expectAlphaAfter
+
+def isalpha_at_index(s: list[str], i: int) -> bool:
+    return 0 <= i < len(s) and s[i].isalpha()
 
 def render_diffs(given, correct, given_elems, correct_elems):
     """Create the diff comparison strings for each part."""
@@ -312,8 +350,13 @@ def render_diffs(given, correct, given_elems, correct_elems):
 
             # If completely missing in "given", add hyphen
             if given_index == i:
-                has_error = True
-                given_elem += bad('-')
+                alphaBefore = isalpha_at_index(correct, correct_index - 1)
+                alphaAfter = isalpha_at_index(correct, j)
+
+                # Only mark an error if it isn't a missing alternative
+                if not is_missing_alternative(correct[correct_index:j], alphaBefore, alphaAfter):
+                    has_error = True
+                    given_elem += bad('-')
 
         if not cnt:
             continue
