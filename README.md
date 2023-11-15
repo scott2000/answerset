@@ -78,7 +78,10 @@ But if you type "mouse, cow" for `dog, cat, mouse (animals)`:
 
 There must always be a space immediately before a comment, or else it will be
 treated as part of the answer. For instance, the `(ing)` in `start(ing)` is not
-considered a comment.
+considered a comment. Otherwise, if you want to prevent `(...)` from being
+interpreted as a comment, you could add an answer separator (`,` or `;`)
+immediately after it. For instance, the `(away)` in `go (away),` is not
+considered a comment, and the `,` will be ignored when checking answers.
 
 ## Implementation Details
 

@@ -9,7 +9,7 @@ from anki.collection import Collection
 from anki.utils import html_to_text_line
 
 space_re = re.compile(r" +")
-junk_re = re.compile(r"[-\s]")
+junk_re = re.compile(r"[-\s()\[\]]")
 prefix_limit = 3
 max_dist = 0x7fffffff
 
@@ -49,7 +49,7 @@ def adj_dist(a, b):
     matching prefixes and ignore whitespace and hyphens.
     """
 
-    # Remove whitespace and hyphens
+    # Remove characters that aren't useful for matching
     a = re.sub(junk_re, '', a)
     b = re.sub(junk_re, '', b)
 
@@ -320,6 +320,42 @@ def is_missing_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bo
     # There should be an alphabetic character only next to slashes
     return alphaBefore == expectAlphaBefore and alphaAfter == expectAlphaAfter
 
+def is_bracketed(segment: list[str], start: str, end: str) -> bool:
+    """
+    Check whether a segment of text is a valid bracketed part which is
+    optional in the answer.
+    """
+
+    if len(segment) < 3:
+        return False
+
+    if segment[0] != start or segment[-1] != end:
+        return False
+
+    inner_text = segment[1:-1]
+    return start not in inner_text and end not in inner_text
+
+def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
+    """
+    Check whether a segment of text is allowed to be missing. If it is allowed
+    to be missing, then it will not be reported as incorrect if it is missing.
+    Otherwise, it will be shown as incorrect if it is missing.
+    """
+
+    # Junk characters like spaces, hyphens, and parentheses can be missing
+    if all(is_junk(ch) for ch in segment):
+        return True
+
+    # Alternatives like "/abc", "/abc/", and "abc/" can be missing
+    if is_missing_alternative(segment, alphaBefore, alphaAfter):
+        return True
+
+    # Bracketed text like "(abc)" and "[abc def]" can be missing
+    if is_bracketed(segment, '(', ')') or is_bracketed(segment, '[', ']'):
+        return True
+
+    return False
+
 def isalpha_at_index(s: list[str], i: int) -> bool:
     return 0 <= i < len(s) and s[i].isalpha()
 
@@ -364,7 +400,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
                 alphaAfter = isalpha_at_index(correct, j)
 
                 # Only mark an error if it isn't a missing alternative
-                if not is_missing_alternative(correct[correct_index:j], alphaBefore, alphaAfter):
+                if not is_missing_allowed(correct[correct_index:j], alphaBefore, alphaAfter):
                     has_error = True
                     given_elem += bad('-')
 
