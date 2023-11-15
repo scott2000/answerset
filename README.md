@@ -76,6 +76,10 @@ But if you type "mouse, cow" for `dog, cat, mouse (animals)`:
 
 ![Comment on an answer set](img/set_comment.png)
 
+There must always be a space immediately before a comment, or else it will be
+treated as part of the answer. For instance, the `(ing)` in `start(ing)` is not
+considered a comment.
+
 ## Implementation Details
 
 This add-on is implemented as a monkey patch replacing

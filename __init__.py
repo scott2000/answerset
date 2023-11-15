@@ -206,13 +206,22 @@ def split_comment(string: str, start: str, end: str) -> tuple[str, str]:
 
             # If start of comment is found, make sure it is valid
             if depth == 0:
-                # If there are delimiters in the remaining string, it's invalid
                 stripped = string[:-i].strip()
+
+                # If the remaining string is empty, it's invalid
+                if not stripped:
+                    break
+
+                # If there are delimiters in the remaining string, it's invalid
                 if start in stripped or end in stripped:
                     break
 
+                # If there is no space before the start of the comment, it's invalid
+                if string[-(i + 1)] != ' ':
+                    break
+
                 # It is valid so return the comment separately
-                return string[:-i].strip(), ' ' + string[-i:]
+                return stripped, ' ' + string[-i:]
 
         elif ch == end:
             depth += 1
