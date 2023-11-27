@@ -8,10 +8,34 @@ from aqt.reviewer import Reviewer
 from anki.collection import Collection
 from anki.utils import html_to_text_line
 
+try:
+    config = aqt.mw.addonManager.getConfig(__name__)
+except:
+    config = None
+
+def get_config_var(var_name, default_value):
+    try:
+        value = config[var_name]
+    except:
+        return default_value
+
+    if type(value) is not type(default_value):
+        return default_value
+
+    return value
+
+config_answer_choice_comments = get_config_var('Enable Answer Choice Comments [...]', False)
+config_answer_comments = get_config_var('Enable Answer Comments (...)', False)
+config_lenient_validation = get_config_var('Enable Lenient Validation', False)
+config_ignored_characters = get_config_var('Ignored Characters', '')
+
 space_re = re.compile(r" +")
-junk_re = re.compile(r"[-\s()\[\]]")
 prefix_limit = 3
 max_dist = 0x7fffffff
+
+bracket_chars = '()[]'
+junk_chars = config_ignored_characters.replace(' ', ' \t\r\n') + bracket_chars
+junk_trans = {ord(ch): None for ch in junk_chars}
 
 def dist(a, b):
     """Returns the Levenshtein distance between two strings suffixes."""
@@ -43,15 +67,15 @@ def dist(a, b):
 
     return arr[-1]
 
-def adj_dist(a, b):
+def adj_dist(a: str, b: str):
     """
     Returns the Levenshtein distance between two strings adjusted to prefer
     matching prefixes and ignore whitespace and hyphens.
     """
 
     # Remove characters that aren't useful for matching
-    a = re.sub(junk_re, '', a)
-    b = re.sub(junk_re, '', b)
+    a = a.translate(junk_trans)
+    b = b.translate(junk_trans)
 
     # If equal, then return 0 immediately
     if a == b:
@@ -186,12 +210,16 @@ class Arranger:
             pass
         return arranger.finalize()
 
-def split_comment(string: str, start: str, end: str) -> tuple[str, str]:
+def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """
     Find a comment delimited by "start" and "end" and remove it from the end of
     the string. The comment cannot be the whole string, and it must come at the
     end. Nesting is allowed, but not multiple independent comments in a string.
     """
+
+    # If disabled by config, don't try to split
+    if not enabled:
+        return string, ''
 
     # If the string is too small or doesn't end with the delimiter, don't split
     if len(string) < 3 or string[-1] != end:
@@ -239,7 +267,7 @@ def split_options(string: str, sep: str) -> list[tuple[str, str]]:
     for i in range(len(parts)):
         s = parts[i].strip()
         if s:
-            stripped.append(split_comment(s, '[', ']'))
+            stripped.append(split_comment(s, '[', ']', config_answer_choice_comments))
 
     return stripped
 
@@ -271,7 +299,7 @@ def group_combining(string: str) -> list[str]:
     return parts
 
 def is_junk(ch: str):
-    return len(ch) == 1 and re.match(junk_re, ch)
+    return len(ch) == 1 and ord(ch) in junk_trans
 
 def good(s: str) -> str:
     return f"<span class=typeGood>{html.escape(s)}</span>"
@@ -335,12 +363,21 @@ def is_bracketed(segment: list[str], start: str, end: str) -> bool:
     inner_text = segment[1:-1]
     return start not in inner_text and end not in inner_text
 
+def keep_for_bracket_check(ch: str) -> bool:
+    """Check if a character should be kept while checking brackets."""
+
+    return ch in bracket_chars or not is_junk(ch)
+
 def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
     """
     Check whether a segment of text is allowed to be missing. If it is allowed
     to be missing, then it will not be reported as incorrect if it is missing.
     Otherwise, it will be shown as incorrect if it is missing.
     """
+
+    # Missing text is only allowed if lenient validation is enabled
+    if not config_lenient_validation:
+        return False
 
     # Junk characters like spaces, hyphens, and parentheses can be missing
     if all(is_junk(ch) for ch in segment):
@@ -349,6 +386,9 @@ def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) 
     # Alternatives like "/abc", "/abc/", and "abc/" can be missing
     if is_missing_alternative(segment, alphaBefore, alphaAfter):
         return True
+
+    # Filter out junk characters before/after brackets
+    segment = list(filter(keep_for_bracket_check, segment))
 
     # Bracketed text like "(abc)" and "[abc def]" can be missing
     if is_bracketed(segment, '(', ')') or is_bracketed(segment, '[', ']'):
@@ -399,7 +439,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
                 alphaBefore = isalpha_at_index(correct, correct_index - 1)
                 alphaAfter = isalpha_at_index(correct, j)
 
-                # Only mark an error if it isn't a missing alternative
+                # Check if should be ignored with lenient validation
                 if not is_missing_allowed(correct[correct_index:j], alphaBefore, alphaAfter):
                     has_error = True
                     given_elem += bad('-')
@@ -437,11 +477,11 @@ def compare_answer_no_html(correct: str, given: str) -> str:
     correct = ucd.normalize('NFC', correct)
 
     # Remove comments in parentheses
-    correct, correct_comment = split_comment(correct, '(', ')')
+    correct, correct_comment = split_comment(correct, '(', ')', config_answer_comments)
 
     # Only separate comment for given if present for correct
     if correct_comment:
-        given, given_comment = split_comment(given, '(', ')')
+        given, given_comment = split_comment(given, '(', ')', config_answer_comments)
     else:
         given_comment = ''
 

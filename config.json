@@ -1,0 +1,6 @@
+{
+    "Enable Answer Choice Comments [...]": false,
+    "Enable Answer Comments (...)": false,
+    "Enable Lenient Validation": true,
+    "Ignored Characters": " .-"
+}

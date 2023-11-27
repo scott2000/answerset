@@ -46,42 +46,13 @@ a, b, c; d, e, f
 
 Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
 
-### Comments
+## Config
 
-Comments may be added to an answer choice using `[...]`. These comments will not
-be checked, so they can be used to add notes to answers. For instance:
+There are a few special features which can be enabled/disabled in the Add-on
+config in Anki:
 
-```txt
-ball [the event], dance
-```
-
-Will be parsed as `ball` as one answer with `[the event]` attached as a note,
-and `dance` as another answer. For comments which apply to the entire set of
-answers, use `(...)` instead. For instance:
-
-```txt
-dog, cat, mouse (animals)
-```
-
-Would be parsed as `dog`, `cat`, and `mouse` for answer choices, and a general
-note of `(animals)` which applies to all of the choices. This is different from
-`[...]` because it will not be rearranged when comparing answers. The two styles
-may be used in the same card, but cannot be nested.
-
-As an example, if you type "mouse, cow" for `dog, cat, mouse [animal]`:
-
-![Comment on an answer set](img/comment.png)
-
-But if you type "mouse, cow" for `dog, cat, mouse (animals)`:
-
-![Comment on an answer set](img/set_comment.png)
-
-There must always be a space immediately before a comment, or else it will be
-treated as part of the answer. For instance, the `(ing)` in `start(ing)` is not
-considered a comment. Otherwise, if you want to prevent `(...)` from being
-interpreted as a comment, you could add an answer separator (`,` or `;`)
-immediately after it. For instance, the `(away)` in `go (away),` is not
-considered a comment, and the `,` will be ignored when checking answers.
+* [Lenient Validation](doc/lenient_validation.md) *(Enabled by default)*
+* [Comments](doc/comments.md) *(Disabled by default)*
 
 ## Implementation Details
 
@@ -99,6 +70,28 @@ together first, then the next closest, and so on until there are no more pairs.
 Then, combining characters are grouped for the final difference, which then uses
 a similar algorithm to the default implementation. Comments are only compared if
 they are given when typing the answer in.
+
+## Changelog
+
+2023-11-26:
+
+* Added configuration options in Anki Add-on config page.
+* Comments are now disabled by default, but can be enabled in config.
+* Lenient validation can now be disabled in config.
+* Missing periods are now ignored by default, but this can be changed in config.
+
+2023-11-15:
+
+* Added support for optional text in brackets.
+* Comments now must have a space immediately before them.
+
+2023-07-13:
+
+* Added support for alternatives separated by slashes.
+
+2023-06-15:
+
+* Fixed handling of HTML tags in expected answer.
 
 ## Bugs
 
