@@ -20,4 +20,4 @@ test:
 	$(PYTHON) -m pytest -vv
 
 $(OUTPUT_FILE): $(SOURCE_FILES)
-	zip $@ $^
+	zip -j $@ $^
