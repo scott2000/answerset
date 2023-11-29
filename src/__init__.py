@@ -34,7 +34,8 @@ prefix_limit = 3
 max_dist = 0x7fffffff
 
 bracket_chars = '()[]'
-junk_chars = config_ignored_characters.replace(' ', ' \t\r\n') + bracket_chars
+whitespace_chars = ' \t\r\n'
+junk_chars = config_ignored_characters.replace(' ', whitespace_chars) + bracket_chars
 junk_trans = {ord(ch): None for ch in junk_chars}
 
 def dist(a, b):
@@ -313,7 +314,36 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
 
-def is_missing_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
+def strip_segment_whitespace(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> list[str]:
+    """Strip whitespace from ends of a segment which are next to whitespace."""
+
+    # Find start and end of fully stripped segment
+    start = None
+    end = None
+    for i, ch in enumerate(segment):
+        if ch in whitespace_chars:
+            continue
+
+        if start is None:
+            start = i
+
+        end = i + 1
+
+    # If segment is all whitespace, return empty list
+    if start is None or end is None:
+        return []
+
+    # If no whitespace before segment, don't strip start
+    if alphaBefore:
+        start = None
+
+    # If no whitespace after segment, don't strip end
+    if alphaAfter:
+        end = None
+
+    return segment[start:end]
+
+def is_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
     """
     Check if a missing segment is part of an alternative. An alternative is
     a series of single words separated by slashes, which allows the user to
@@ -321,17 +351,23 @@ def is_missing_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bo
     no error should be reported.
     """
 
+    # Filter out junk characters except for whitespace
+    segment = list(filter(lambda ch: ch in whitespace_chars or not is_junk(ch), segment))
+
+    # Strip whitespace on ends which already have whitespace
+    segment = strip_segment_whitespace(segment, alphaBefore, alphaAfter)
+
     if not segment:
         return False
 
     first, last = segment[0], segment[-1]
 
-    # Missing alternative segment must start or end with '/'
-    if first != '/' and last != '/':
+    # Missing alternative segment must have '/' on one side but not other
+    if (first == '/') == (last == '/'):
         return False
 
     # There can be no spaces inside the alternative
-    if ' ' in segment:
+    if any(ch in whitespace_chars for ch in segment):
         return False
 
     # First character must be either '/' or alphabetic
@@ -348,25 +384,37 @@ def is_missing_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bo
     # There should be an alphabetic character only next to slashes
     return alphaBefore == expectAlphaBefore and alphaAfter == expectAlphaAfter
 
-def is_bracketed(segment: list[str], start: str, end: str) -> bool:
-    """
-    Check whether a segment of text is a valid bracketed part which is
-    optional in the answer.
-    """
+def remove_bracketed_text(segment: list[str], start: str, end: str) -> list[str]:
+    """Remove all bracketed text from a segment."""
 
-    if len(segment) < 3:
-        return False
+    if start not in segment or end not in segment:
+        return segment
 
-    if segment[0] != start or segment[-1] != end:
-        return False
+    result = []
+    depth = 0
+    for ch in segment:
+        if depth < 0:
+            return segment
 
-    inner_text = segment[1:-1]
-    return start not in inner_text and end not in inner_text
+        if ch == start:
+            depth += 1
+            continue
 
-def keep_for_bracket_check(ch: str) -> bool:
-    """Check if a character should be kept while checking brackets."""
+        if ch == end:
+            depth -= 1
+            continue
 
-    return ch in bracket_chars or not is_junk(ch)
+        if depth == 0:
+            result.append(ch)
+            continue
+
+        if ch in bracket_chars:
+            return segment
+
+    if depth != 0:
+        return segment
+
+    return result
 
 def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
     """
@@ -379,22 +427,16 @@ def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) 
     if not config_lenient_validation:
         return False
 
-    # Junk characters like spaces, hyphens, and parentheses can be missing
+    # Remove bracketed text, since it is allowed to be missing
+    segment = remove_bracketed_text(segment, '(', ')')
+    segment = remove_bracketed_text(segment, '[', ']')
+
+    # If the remainder is all junk, it is allowed to be missing
     if all(is_junk(ch) for ch in segment):
         return True
 
-    # Alternatives like "/abc", "/abc/", and "abc/" can be missing
-    if is_missing_alternative(segment, alphaBefore, alphaAfter):
-        return True
-
-    # Filter out junk characters before/after brackets
-    segment = list(filter(keep_for_bracket_check, segment))
-
-    # Bracketed text like "(abc)" and "[abc def]" can be missing
-    if is_bracketed(segment, '(', ')') or is_bracketed(segment, '[', ']'):
-        return True
-
-    return False
+    # Alternatives like "/abc", "/abc/def", and "abc/" can be missing
+    return is_alternative(segment, alphaBefore, alphaAfter)
 
 def isalpha_at_index(s: list[str], i: int) -> bool:
     return 0 <= i < len(s) and s[i].isalpha()

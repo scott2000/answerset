@@ -73,6 +73,10 @@ they are given when typing the answer in.
 
 ## Changelog
 
+2023-11-29:
+
+* Fixed issue with mixing alternatives with other lenient validation options.
+
 2023-11-26:
 
 * Added configuration options in Anki Add-on config page.
