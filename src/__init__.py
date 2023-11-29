@@ -3,12 +3,8 @@ import html
 import unicodedata as ucd
 import re
 
-import aqt
-from aqt.reviewer import Reviewer
-from anki.collection import Collection
-from anki.utils import html_to_text_line
-
 try:
+    import aqt
     config = aqt.mw.addonManager.getConfig(__name__)
 except:
     config = None
@@ -26,8 +22,8 @@ def get_config_var(var_name, default_value):
 
 config_answer_choice_comments = get_config_var('Enable Answer Choice Comments [...]', False)
 config_answer_comments = get_config_var('Enable Answer Comments (...)', False)
-config_lenient_validation = get_config_var('Enable Lenient Validation', False)
-config_ignored_characters = get_config_var('Ignored Characters', '')
+config_lenient_validation = get_config_var('Enable Lenient Validation', True)
+config_ignored_characters = get_config_var('Ignored Characters', ' .-')
 
 space_re = re.compile(r" +")
 prefix_limit = 3
@@ -587,23 +583,35 @@ def compare_answer_no_html(correct: str, given: str) -> str:
 
     return res
 
-def correct(self, given: str, correct: str, **kwargs) -> str:
-    return compare_answer_no_html(correct, given)
-
-def compare_answer(self, correct: str, given: str) -> str:
-    # Strip AV tags if possible
-    try:
-        correct = aqt.mw.col.media.strip_av_tags(correct)
-    except:
-        pass
-
-    # Strip HTML tags
-    correct = html_to_text_line(correct)
-
-    return compare_answer_no_html(correct, given)
-
 # Up to Anki 2.1.54
-Reviewer.correct = correct
+try:
+    from aqt.reviewer import Reviewer
+
+    def correct(self, given: str, correct: str, **kwargs) -> str:
+        return compare_answer_no_html(correct, given)
+
+    Reviewer.correct = correct
+except:
+    pass
 
 # Anki 2.1.56+ (correction was moved to Rust backend)
-Collection.compare_answer = compare_answer
+try:
+    import aqt
+    from anki.collection import Collection
+    from anki.utils import html_to_text_line
+
+    def compare_answer(self, correct: str, given: str) -> str:
+        # Strip AV tags if possible
+        try:
+            correct = aqt.mw.col.media.strip_av_tags(correct)
+        except:
+            pass
+
+        # Strip HTML tags
+        correct = html_to_text_line(correct)
+
+        return compare_answer_no_html(correct, given)
+
+    Collection.compare_answer = compare_answer
+except:
+    pass
