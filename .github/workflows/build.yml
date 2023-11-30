@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Check out repository
+      uses: actions/checkout@v3
 
-    - id: commit
+    - name: Get commit hash
+      id: commit
       uses: prompt/actions-commit-hash@v3.0.0
 
     - name: Set up Python 3.11
