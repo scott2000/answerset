@@ -1,7 +1,11 @@
-name: Build Answer Set
+name: Test Answer Set
 
 on:
   push:
+    branches:
+    - "feature/**"
+
+  pull_request:
     branches:
     - "main"
 
@@ -15,9 +19,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - id: commit
-      uses: prompt/actions-commit-hash@v3.0.0
-
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
@@ -28,13 +29,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest
 
-    - name: Build add-on
+    - name: Test add-on
       run: |
-        make build
-
-    - name: Upload add-on artifact
-      uses: actions/upload-artifact@v3.1.3
-      with:
-        name: answerset-${{ steps.commit.outputs.short }}
-        path: answerset.ankiaddon
-        if-no-files-found: error
+        make test
