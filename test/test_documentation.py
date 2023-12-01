@@ -18,7 +18,7 @@ def test_doc_semicolon():
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>a, b, c</span></code>; <code id=typeans><span class=typeMissed>d, e, f</span></code></div>'
 
-def test_doc_lenient_validation_missing_spaces():
+def test_doc_lenient_validation_missing_hyphen_period():
     correct = 'We co-operated.'
     given = 'We cooperated'
     result = compare_answer_no_html(correct, given)
@@ -30,13 +30,13 @@ def test_doc_lenient_validation_missing_paren_text():
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>start</span><span class=typeMissed>(ing)</span></code></div>'
 
-def test_doc_lenient_validation_missing_paren():
+def test_doc_lenient_validation_missing_parens():
     correct = 'start(ing)'
     given = 'starting'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>start</span><span class=typeMissed>(</span><span class=typeGood>ing</span><span class=typeMissed>)</span></code></div>'
 
-def test_doc_lenient_validation_alternative():
+def test_doc_lenient_validation_missing_alternative():
     correct = "set in one's/my ways"
     given = 'set in my ways'
     result = compare_answer_no_html(correct, given)
