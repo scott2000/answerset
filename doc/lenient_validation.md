@@ -4,13 +4,13 @@ Sometimes you may not want to type out the full answer as it is written on the
 card, so if lenient validation is enabled, these cases will not be marked as
 errors when checking the answer. Instead, they will just be shown in gray.
 Lenient validation is enabled by default, but it can be disabled or customized
-in the Anki Add-on config page.
+in the Anki add-on config page.
 
 ## Missing Spaces, Periods, and Hyphens
 
 Since spaces, periods, and hyphens usually aren't important when checking
 answers, lenient validation will not show the answer as incorrect when they
-are missing. In the Anki Add-on config page, you can customize which
+are missing. In the Anki add-on config page, you can customize which
 characters are allowed to be missing like this.
 
 For example, if you type "We cooperated" for `We co-operated.`, it shows:
