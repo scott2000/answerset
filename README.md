@@ -2,7 +2,10 @@
 
 Answer Set is an [Anki add-on](https://ankiweb.net/shared/info/1827331674)
 which gives better feedback for "type in the answer" style cards if there are
-multiple correct answers, and improves support for Indic scripts.
+multiple correct answers and improves support for Indic scripts.
+
+To install, open Anki and go to Tools > Add-ons in the menu bar, then click
+"Get Add-ons..." and enter this code: `1827331674`
 
 ## Multiple Answers
 
@@ -48,7 +51,7 @@ Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
 
 ## Config
 
-There are a few special features which can be enabled/disabled in the Add-on
+There are a few special features which can be enabled/disabled in the add-on
 config in Anki:
 
 * [Lenient Validation](doc/lenient_validation.md) *(Enabled by default)*
@@ -79,7 +82,7 @@ they are given when typing the answer in.
 
 2023-11-26:
 
-* Added configuration options in Anki Add-on config page.
+* Added configuration options in Anki add-on config page.
 * Comments are now disabled by default, but can be enabled in config.
 * Lenient validation can now be disabled in config.
 * Missing periods are now ignored by default, but this can be changed in config.

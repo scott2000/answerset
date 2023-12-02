@@ -1,6 +1,6 @@
 # Comments
 
-Comments are **disabled** by default and must be enabled in the Anki Add-on
+Comments are **disabled** by default and must be enabled in the Anki add-on
 config page before they can be used. If you want text in brackets or
 parentheses to be optional, you likely want to use
 [Lenient Validation](lenient_validation.md) instead of comments.
