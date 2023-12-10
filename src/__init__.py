@@ -49,69 +49,71 @@ config_ignored_characters = get_config_var('Ignored Characters', ' .-')
 
 space_re = re.compile(r" +")
 prefix_limit = 3
-max_dist = 0x7fffffff
+max_similarity = 0x7fffffff
 
 bracket_chars = '()[]'
 whitespace_chars = ' \t\r\n'
 junk_chars = config_ignored_characters.replace(' ', whitespace_chars) + bracket_chars
 junk_trans = {ord(ch): None for ch in junk_chars}
 
-def dist(a, b):
-    """Returns the Levenshtein distance between two strings suffixes."""
+def similarity(a: str, b: str):
+    """
+    Returns the length of the longest common subsequence between two strings suffixes.
+    """
 
     # Make string "b" be smaller than "a"
     if len(a) < len(b):
         a, b = b, a
 
-    # If "b" is empty, the distance is the length of "a"
+    # If "b" is empty, the similarity is zero
     if not len(b):
-        return len(a)
+        return 0
 
     # Iteratively compute using an array and two variables
-    arr = list(range(1, len(b) + 1))
+    arr = [0] * len(b)
     for i in range(len(a)):
-        prev_prev = i
-        curr_prev = i + 1
+        prev_prev = 0
+        curr_prev = 0
 
         for j in range(len(b)):
             prev_curr = arr[j]
 
             if a[i] == b[j]:
-                arr[j] = prev_prev
+                arr[j] = prev_prev + 1
             else:
-                arr[j] = min(prev_curr, curr_prev, prev_prev) + 1
+                arr[j] = max(prev_curr, curr_prev, prev_prev)
 
             prev_prev = prev_curr
             curr_prev = arr[j]
 
     return arr[-1]
 
-def adj_dist(a: str, b: str):
+def adj_similarity(a_full: str, b_full: str):
     """
-    Returns the Levenshtein distance between two strings adjusted to prefer
-    matching prefixes and ignore whitespace and hyphens.
+    Returns the similarity between two strings adjusted to prefer matching
+    prefixes and ignore junk characters.
     """
 
     # Remove characters that aren't useful for matching
-    a = a.translate(junk_trans)
-    b = b.translate(junk_trans)
+    a = a_full.translate(junk_trans)
+    b = b_full.translate(junk_trans)
 
-    # If equal, then return 0 immediately
+    # If a string has all junk characters, then leave them
+    if not a or not b:
+        a, b = a_full, b_full
+
+    # If equal, then return max_similarity immediately
     if a == b:
-        return 0
+        return max_similarity
 
-    # Find the length of the shared prefix
-    overlap = min(len(a), len(b))
+    # Find the length of the shared prefix, up to prefix_limit
+    overlap = min(len(a), len(b), prefix_limit)
     prefix = 0
     while prefix < overlap and a[prefix] == b[prefix]:
         prefix += 1
 
-    # Drop shared prefix for distance calculation
-    a = a[prefix:]
-    b = b[prefix:]
-
-    # Return distance adjusted for prefix length
-    return dist(a, b) + (prefix_limit - min(prefix, prefix_limit))
+    # Return similarity adjusted for prefix length
+    return prefix_limit * similarity(a, b) + prefix
 
 class Arranger:
     def __init__(self, given, correct):
@@ -122,51 +124,51 @@ class Arranger:
         self.assigned = {}
         self.used = set()
 
-    def get_dist(self, i, j):
-        """Find the distance between a "given" part and a "correct" part."""
+    def get_similarity(self, i, j):
+        """Find the similarity between a "given" part and a "correct" part."""
 
         if (i, j) in self.memo:
             return self.memo[(i, j)]
 
-        d = adj_dist(self.given[i][0], self.correct[j][0])
-        self.memo[(i, j)] = d
-        return d
+        s = adj_similarity(self.given[i][0], self.correct[j][0])
+        self.memo[(i, j)] = s
+        return s
 
-    def min_for(self, i):
+    def max_for(self, i):
         """
-        Compute the minimum distance for a specific "given" part to the nearest
+        Compute the maximum similarity for a specific "given" part to the nearest
         matching "correct" part.
         """
 
-        # Check for already computed minimum distance
+        # Check for already computed maximum similarity
         if i in self.closest and self.closest[i] not in self.used:
-            return self.get_dist(i, self.closest[i])
+            return self.get_similarity(i, self.closest[i])
 
         # Find the closest "correct" part
         closest = None
-        closest_dist = max_dist
+        closest_similarity = -1
         for j in range(len(self.correct)):
             # Skip "correct" parts which were already used
             if j in self.used:
                 continue
 
-            # Update minimum distance
-            d = self.get_dist(i, j)
-            if d < closest_dist:
+            # Update maximum similarity
+            s = self.get_similarity(i, j)
+            if s > closest_similarity:
                 closest = j
-                closest_dist = d
+                closest_similarity = s
 
-                # A distance of 0 is an exact match
-                if d == 0:
+                # A similarity of max_similarity is an exact match
+                if s == max_similarity:
                     break
 
-        # Remember the closest value and return the distance
+        # Remember the closest value and return the similarity
         self.closest[i] = closest
-        return closest_dist
+        return closest_similarity
 
     def step(self):
         """
-        Make an assignment for the shortest distance pair. Returns True if more
+        Make an assignment for the most similar pair. Returns True if more
         steps are needed and False otherwise.
         """
 
@@ -180,20 +182,20 @@ class Arranger:
 
         # Find closest pair of "given" and "correct"
         closest = None
-        closest_dist = max_dist
+        closest_similarity = -1
         for i in range(len(self.given)):
             # Skip "given" parts which are already assigned
             if i in self.assigned:
                 continue
 
-            # Update minimum distance
-            d = self.min_for(i)
-            if d < closest_dist:
+            # Update maximum similarity
+            s = self.max_for(i)
+            if s > closest_similarity:
                 closest = i
-                closest_dist = d
+                closest_similarity = s
 
-                # A distance of 0 is an exact match
-                if d == 0:
+                # A similarity of max_similarity is an exact match
+                if s == max_similarity:
                     break
 
         # Record the assignment
@@ -221,13 +223,13 @@ class Arranger:
 
         return parts
 
-    def arrange(given, correct):
-        """Rearrange parts so that similar ones line up."""
+def arrange(given, correct):
+    """Rearrange parts so that similar ones line up."""
 
-        arranger = Arranger(given, correct)
-        while arranger.step():
-            pass
-        return arranger.finalize()
+    arranger = Arranger(given, correct)
+    while arranger.step():
+        pass
+    return arranger.finalize()
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """
@@ -556,7 +558,7 @@ def compare_answer_no_html(correct: str, given: str) -> str:
     has_error = False
     given_elems = []
     correct_elems = []
-    for given, correct in Arranger.arrange(given, correct):
+    for given, correct in arrange(given, correct):
         if not given:
             correct_elems.append(missed(correct[0]) + correct[1])
         elif not correct:

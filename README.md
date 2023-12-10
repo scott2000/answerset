@@ -66,7 +66,7 @@ these functions, it is not guaranteed to work in future updates. I have tested
 it in Anki 2.1.40 through 2.1.65.
 
 The answer rearranging algorithm uses the
-[Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
+[Longest Common Subsequence](https://en.wikipedia.org/wiki/Longest_common_subsequence)
 between "given" and "correct" answer choices to determine which correct answer
 is closest to which given answer for rearranging. The closest pair is grouped
 together first, then the next closest, and so on until there are no more pairs.
@@ -75,6 +75,10 @@ a similar algorithm to the default implementation. Comments are only compared if
 they are given when typing the answer in.
 
 ## Changelog
+
+2023-12-10:
+
+* Changed choice-matching heuristic to maximize correct letters instead of minimizing wrong letters.
 
 2023-11-29:
 
