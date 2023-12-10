@@ -35,3 +35,9 @@ def test_issue_5_period_after_alternative():
     given = 'Det er X i Yen'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>Det er X i Yen</span><span class=typeMissed>/Ya.</span></code></div>'
+
+def test_issue_10_many_missing_chars():
+    correct = 'kler på meg/deg/seg/oss, Xen'
+    given = 'kler på meg'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>kler på meg</span><span class=typeMissed>/deg/seg/oss</span></code>, <code id=typeans><span class=typeMissed>Xen</span></code></div>'

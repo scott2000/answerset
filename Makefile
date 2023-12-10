@@ -19,7 +19,7 @@ clean:
 	rm -rf $(CACHE_DIRS) $(GENERATED_FILES)
 
 test:
-	$(PYTHON) -m pytest -vv --junitxml=$(TEST_REPORT_FILE)
+	$(PYTHON) -m pytest --junitxml=$(TEST_REPORT_FILE)
 
 $(OUTPUT_FILE): $(SOURCE_FILES)
 	zip -j $@ $^
