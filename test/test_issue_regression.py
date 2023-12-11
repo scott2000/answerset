@@ -41,3 +41,9 @@ def test_issue_10_many_missing_chars():
     given = 'kler på meg'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>kler på meg</span><span class=typeMissed>/deg/seg/oss</span></code>, <code id=typeans><span class=typeMissed>Xen</span></code></div>'
+
+def test_issue_10_separators_in_brackets():
+    correct = 'kler på (meg/deg/seg/oss, Xen, ...)'
+    given = 'kler på (meg, Xen, ...)'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>kler på (meg</span><span class=typeMissed>/deg/seg/oss</span><span class=typeGood>, Xen, ...)</span></code></div>'

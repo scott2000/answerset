@@ -76,6 +76,10 @@ they are given when typing the answer in.
 
 ## Changelog
 
+2023-12-11:
+
+* Added config option to ignore answer separators in brackets and parentheses.
+
 2023-12-10:
 
 * Changed choice-matching heuristic to maximize correct letters instead of minimizing wrong letters.

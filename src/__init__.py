@@ -24,6 +24,7 @@ import difflib
 import html
 import unicodedata as ucd
 import re
+from typing import Iterator
 
 try:
     import aqt
@@ -45,6 +46,7 @@ def get_config_var(var_name, default_value):
 config_answer_choice_comments = get_config_var('Enable Answer Choice Comments [...]', False)
 config_answer_comments = get_config_var('Enable Answer Comments (...)', False)
 config_lenient_validation = get_config_var('Enable Lenient Validation', True)
+config_ignore_separators_in_brackets = get_config_var('Ignore Separators in Brackets', True)
 config_ignored_characters = get_config_var('Ignored Characters', ' .-')
 
 space_re = re.compile(r" +")
@@ -277,16 +279,64 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     return string, ''
 
-def split_options(string: str, sep: str) -> list[tuple[str, str]]:
+def find_outer_bracket_ranges(input: Iterator[str]) -> list[tuple[int, int]]:
+    found_ranges = []
+    expected_ends = []
+    for i, ch in enumerate(input):
+        if ch == '(':
+            expected_ends.append((i, ')'))
+        elif ch == '[':
+            expected_ends.append((i, ']'))
+        elif ch == ')' or ch == ']':
+            try:
+                start_index, end_char = expected_ends.pop()
+            except IndexError:
+                return []
+
+            if end_char != ch:
+                return []
+
+            if not expected_ends:
+                found_ranges.append((start_index, i + 1))
+
+    if expected_ends:
+        return []
+
+    return found_ranges
+
+def index_in_any_range(index: int, ranges: list[tuple[int, int]]) -> bool:
+    return any(start <= index < end for start, end in ranges)
+
+def find_indices(haystack: str, needle: str, ranges: list[tuple[int, int]]) -> Iterator[int]:
+    return (i for i, ch in enumerate(haystack) if ch == needle and not index_in_any_range(i, ranges))
+
+def has_separator(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> bool:
+    return any(True for _ in find_indices(string, sep, bracket_ranges))
+
+def split_except_for_ranges(string: str, sep: str, ranges: list[tuple[int, int]]) -> list[str]:
+    sep_indices = list(find_indices(string, sep, ranges))
+
+    if not sep_indices:
+        return [string]
+
+    parts = []
+    last = 0
+    for i in sep_indices:
+        parts.append(string[last:i])
+        last = i + 1
+
+    parts.append(string[last:])
+    return parts
+
+def split_options(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
     """
 
-    parts = string.split(sep)
     stripped = []
-    for i in range(len(parts)):
-        s = parts[i].strip()
+    for part in split_except_for_ranges(string, sep, bracket_ranges):
+        s = part.strip()
         if s:
             stripped.append(split_comment(s, '[', ']', config_answer_choice_comments))
 
@@ -404,35 +454,16 @@ def is_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> b
     # There should be an alphabetic character only next to slashes
     return alphaBefore == expectAlphaBefore and alphaAfter == expectAlphaAfter
 
-def remove_bracketed_text(segment: list[str], start: str, end: str) -> list[str]:
+def remove_bracketed_text(segment: list[str]) -> list[str]:
     """Remove all bracketed text from a segment."""
 
-    if start not in segment or end not in segment:
-        return segment
-
     result = []
-    depth = 0
-    for ch in segment:
-        if depth < 0:
-            return segment
+    last_end = 0
+    for start, end in find_outer_bracket_ranges(segment):
+        result.extend(segment[last_end:start])
+        last_end = end
 
-        if ch == start:
-            depth += 1
-            continue
-
-        if ch == end:
-            depth -= 1
-            continue
-
-        if depth == 0:
-            result.append(ch)
-            continue
-
-        if ch in bracket_chars:
-            return segment
-
-    if depth != 0:
-        return segment
+    result.extend(segment[last_end:])
 
     return result
 
@@ -448,8 +479,7 @@ def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) 
         return False
 
     # Remove bracketed text, since it is allowed to be missing
-    segment = remove_bracketed_text(segment, '(', ')')
-    segment = remove_bracketed_text(segment, '[', ']')
+    segment = remove_bracketed_text(segment)
 
     # If the remainder is all junk, it is allowed to be missing
     if all(is_junk(ch) for ch in segment):
@@ -547,12 +577,23 @@ def compare_answer_no_html(correct: str, given: str) -> str:
     else:
         given_comment = ''
 
+    # Find bracket ranges in both answers (if config option enabled)
+    if config_ignore_separators_in_brackets:
+        correct_bracket_ranges = find_outer_bracket_ranges(correct)
+        given_bracket_ranges = find_outer_bracket_ranges(given)
+    else:
+        correct_bracket_ranges = []
+        given_bracket_ranges = []
+
     # Pick separator as ';' if one is used, otherwise ','
-    sep = ';' if ';' in correct else ','
+    if has_separator(correct, ';', correct_bracket_ranges):
+        sep = ';'
+    else:
+        sep = ','
 
     # Split on the separator
-    given = split_options(given, sep)
-    correct = split_options(correct, sep)
+    correct = split_options(correct, sep, correct_bracket_ranges)
+    given = split_options(given, sep, given_bracket_ranges)
 
     # Arrange the parts so that similar ones line up and render the diffs
     has_error = False
