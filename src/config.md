@@ -36,6 +36,13 @@ answers to match character-for-character. For instance, "Ignored Characters"
 and text in brackets or parentheses may be left out in answers, and it will
 not be marked as an error.
 
+## Ignore Separators in Brackets
+
+Valid Options: `false` or `true`
+
+If set to `true`, commas and semicolons may be used inside of brackets or
+parentheses without causing the answer to be split into multiple choices.
+
 ## Ignored Characters
 
 This option configures which characters may be left out in answers without it

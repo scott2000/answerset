@@ -2,5 +2,6 @@
     "Enable Answer Choice Comments [...]": false,
     "Enable Answer Comments (...)": false,
     "Enable Lenient Validation": true,
+    "Ignore Separators in Brackets": true,
     "Ignored Characters": " .-"
 }
