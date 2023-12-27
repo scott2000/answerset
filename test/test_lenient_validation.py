@@ -71,3 +71,27 @@ def test_missing_alternative_end_with_brackets():
     given = 'test ghi test'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>test </span><span class=typeMissed>[wx yz]. abc/def/</span><span class=typeGood>ghi test</span></code></div>'
+
+def test_missing_alternative_in_word_with_brackets():
+    correct = 'test word(abc/def/ghi)word test'
+    given = 'test worddefword test'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>test word</span><span class=typeMissed>(abc/</span><span class=typeGood>def</span><span class=typeMissed>/ghi)</span><span class=typeGood>word test</span></code></div>'
+
+def test_missing_alternative_with_spaces_in_brackets():
+    correct = 'test [a b c/d e f/g h i] test'
+    given = 'test d e f test'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>test </span><span class=typeMissed>[a b c/</span><span class=typeGood>d e f</span><span class=typeMissed>/g h i]</span><span class=typeGood> test</span></code></div>'
+
+def test_missing_alternative_with_spaces_not_in_brackets():
+    correct = 'test a b c/d e f/g h i test'
+    given = 'test d e f test'
+    result = compare_answer_no_html(correct, given)
+    assert 'typearrow' in result
+
+def test_missing_alternative_with_junk_before_slash():
+    correct = 'test abc-/def/ghi test'
+    given = 'test abc test'
+    result = compare_answer_no_html(correct, given)
+    assert 'typearrow' in result

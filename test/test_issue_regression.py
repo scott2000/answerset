@@ -6,6 +6,18 @@ def test_issue_2_alternative():
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>be set in </span><span class=typeMissed>one&#x27;s/</span><span class=typeGood>my ways</span></code></div>'
 
+def test_issue_2_alternative_in_brackets_first():
+    correct = "There's no need to hurry - we've got [a lot of/plenty of] time."
+    given = "There's no need to hurry - we've got a lot of time."
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>There&#x27;s no need to hurry - we&#x27;ve got </span><span class=typeMissed>[</span><span class=typeGood>a lot of</span><span class=typeMissed>/plenty of]</span><span class=typeGood> time.</span></code></div>'
+
+def test_issue_2_alternative_in_brackets_second():
+    correct = "There's no need to hurry - we've got [a lot of/plenty of] time."
+    given = "There's no need to hurry - we've got plenty of time."
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>There&#x27;s no need to hurry - we&#x27;ve got </span><span class=typeMissed>[a lot of/</span><span class=typeGood>plenty of</span><span class=typeMissed>]</span><span class=typeGood> time.</span></code></div>'
+
 def test_issue_3_starting():
     correct = 'start(ing)'
     given = 'start'
@@ -47,3 +59,27 @@ def test_issue_10_separators_in_brackets():
     given = 'kler på (meg, Xen, ...)'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>kler på (meg</span><span class=typeMissed>/deg/seg/oss</span><span class=typeGood>, Xen, ...)</span></code></div>'
+
+def test_issue_13_alternative_in_bracket_in_word_first():
+    correct = 'tar en (master/bachelor)grad i X'
+    given = 'tar en mastergrad i X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>tar en </span><span class=typeMissed>(</span><span class=typeGood>master</span><span class=typeMissed>/bachelor)</span><span class=typeGood>grad i X</span></code></div>'
+
+def test_issue_13_alternative_in_bracket_in_word_second():
+    correct = 'tar en (master/bachelor)grad i X'
+    given = 'tar en bachelorgrad i X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>tar en </span><span class=typeMissed>(master/</span><span class=typeGood>bachelor</span><span class=typeMissed>)</span><span class=typeGood>grad i X</span></code></div>'
+
+def test_issue_13_alternative_in_bracket_in_word_both():
+    correct = 'tar en (master/bachelor)grad i X'
+    given = 'tar en master/bachelorgrad i X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>tar en </span><span class=typeMissed>(</span><span class=typeGood>master/bachelor</span><span class=typeMissed>)</span><span class=typeGood>grad i X</span></code></div>'
+
+def test_issue_13_alternative_in_bracket_in_word_neither():
+    correct = 'tar en (master/bachelor)grad i X'
+    given = 'tar en grad i X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>tar en </span><span class=typeMissed>(master/bachelor)</span><span class=typeGood>grad i X</span></code></div>'
