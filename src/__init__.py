@@ -384,7 +384,7 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
 
-def strip_segment_whitespace(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> list[str]:
+def strip_segment_whitespace(segment: list[str], alpha_before: bool, alpha_after: bool) -> list[str]:
     """Strip whitespace from ends of a segment which are next to whitespace."""
 
     # Find start and end of fully stripped segment
@@ -404,16 +404,16 @@ def strip_segment_whitespace(segment: list[str], alphaBefore: bool, alphaAfter: 
         return []
 
     # If no whitespace before segment, don't strip start
-    if alphaBefore:
+    if alpha_before:
         start = None
 
     # If no whitespace after segment, don't strip end
-    if alphaAfter:
+    if alpha_after:
         end = None
 
     return segment[start:end]
 
-def is_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
+def is_alternative(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
     """
     Check if a missing segment is part of an alternative. An alternative is
     a series of single words separated by slashes, which allows the user to
@@ -425,7 +425,7 @@ def is_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> b
     segment = list(filter(lambda ch: ch in whitespace_chars or not is_junk(ch), segment))
 
     # Strip whitespace on ends which already have whitespace
-    segment = strip_segment_whitespace(segment, alphaBefore, alphaAfter)
+    segment = strip_segment_whitespace(segment, alpha_before, alpha_after)
 
     if not segment:
         return False
@@ -448,11 +448,11 @@ def is_alternative(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> b
     if last != '/' and not last.isalpha():
         return False
 
-    expectAlphaBefore = first == '/'
-    expectAlphaAfter = last == '/'
+    expect_alpha_before = first == '/'
+    expect_alpha_after = last == '/'
 
     # There should be an alphabetic character only next to slashes
-    return alphaBefore == expectAlphaBefore and alphaAfter == expectAlphaAfter
+    return alpha_before == expect_alpha_before and alpha_after == expect_alpha_after
 
 def remove_bracketed_text(segment: list[str]) -> list[str]:
     """Remove all bracketed text from a segment."""
@@ -467,7 +467,7 @@ def remove_bracketed_text(segment: list[str]) -> list[str]:
 
     return result
 
-def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) -> bool:
+def is_missing_allowed(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
     """
     Check whether a segment of text is allowed to be missing. If it is allowed
     to be missing, then it will not be reported as incorrect if it is missing.
@@ -486,7 +486,7 @@ def is_missing_allowed(segment: list[str], alphaBefore: bool, alphaAfter: bool) 
         return True
 
     # Alternatives like "/abc", "/abc/def", and "abc/" can be missing
-    return is_alternative(segment, alphaBefore, alphaAfter)
+    return is_alternative(segment, alpha_before, alpha_after)
 
 def isalpha_at_index(s: list[str], i: int) -> bool:
     return 0 <= i < len(s) and s[i].isalpha()
@@ -528,11 +528,11 @@ def render_diffs(given, correct, given_elems, correct_elems):
 
             # If completely missing in "given", add hyphen
             if given_index == i:
-                alphaBefore = isalpha_at_index(correct, correct_index - 1)
-                alphaAfter = isalpha_at_index(correct, j)
+                alpha_before = isalpha_at_index(correct, correct_index - 1)
+                alpha_after = isalpha_at_index(correct, j)
 
                 # Check if should be ignored with lenient validation
-                if not is_missing_allowed(correct[correct_index:j], alphaBefore, alphaAfter):
+                if not is_missing_allowed(correct[correct_index:j], alpha_before, alpha_after):
                     has_error = True
                     given_elem += bad('-')
 
