@@ -55,6 +55,7 @@ max_similarity = 0x7fffffff
 
 bracket_chars = '()[]'
 whitespace_chars = ' \t\r\n'
+keep_in_alternative_chars = whitespace_chars + bracket_chars
 junk_chars = config_ignored_characters.replace(' ', whitespace_chars) + bracket_chars
 junk_trans = {ord(ch): None for ch in junk_chars}
 
@@ -384,6 +385,30 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
 
+def is_partial_bracket(segment: list[str]) -> bool:
+    """Check if the segment looks like the start or end of a bracketed alternative."""
+
+    if not any(ch in bracket_chars for ch in segment):
+        return False
+
+    # Remove any non-bracket junk characters
+    segment = list(filter(lambda ch: ch in bracket_chars or not is_junk(ch), segment))
+
+    # Add a missing bracket if appropriate
+    if segment[0] == '(':
+        segment = segment + [')']
+    elif segment[0] == '[':
+        segment = segment + [']']
+    elif segment[-1] == ')':
+        segment = ['('] + segment
+    elif segment[-1] == ']':
+        segment = ['['] + segment
+    else:
+        return False
+
+    # Make sure that the brackets are now fully balanced
+    return not remove_bracketed_text(segment)
+
 def strip_segment_whitespace(segment: list[str], alpha_before: bool, alpha_after: bool) -> list[str]:
     """Strip whitespace from ends of a segment which are next to whitespace."""
 
@@ -413,7 +438,7 @@ def strip_segment_whitespace(segment: list[str], alpha_before: bool, alpha_after
 
     return segment[start:end]
 
-def is_alternative(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
+def is_alternative(original_segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
     """
     Check if a missing segment is part of an alternative. An alternative is
     a series of single words separated by slashes, which allows the user to
@@ -421,23 +446,33 @@ def is_alternative(segment: list[str], alpha_before: bool, alpha_after: bool) ->
     no error should be reported.
     """
 
-    # Filter out junk characters except for whitespace
-    segment = list(filter(lambda ch: ch in whitespace_chars or not is_junk(ch), segment))
+    # Filter out junk characters except for whitespace and brackets
+    segment = list(filter(lambda ch: ch in keep_in_alternative_chars or not is_junk(ch), original_segment))
 
     # Strip whitespace on ends which already have whitespace
     segment = strip_segment_whitespace(segment, alpha_before, alpha_after)
+
+    # There can be no spaces or brackets inside the alternative unless the
+    # alternative looks like it is fully in brackets
+    if any(ch in keep_in_alternative_chars for ch in segment) and not is_partial_bracket(original_segment):
+        return False
+
+    # Now we can filter out all junk characters
+    segment = list(filter(lambda ch: not is_junk(ch), original_segment))
 
     if not segment:
         return False
 
     first, last = segment[0], segment[-1]
 
+    # If a character was filtered out at the start or end, treat it as whitespace
+    if first != original_segment[0]:
+        alpha_before = False
+    if last != original_segment[-1]:
+        alpha_after = False
+
     # Missing alternative segment must have '/' on one side but not other
     if (first == '/') == (last == '/'):
-        return False
-
-    # There can be no spaces inside the alternative
-    if any(ch in whitespace_chars for ch in segment):
         return False
 
     # First character must be either '/' or alphabetic
