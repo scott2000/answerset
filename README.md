@@ -76,6 +76,11 @@ they are given when typing the answer in.
 
 ## Changelog
 
+2023-12-27:
+
+* Fix bug with alternatives in brackets next to other words.
+* Allow whitespace in alternatives when inside of brackets.
+
 2023-12-11:
 
 * Added config option to ignore answer separators in brackets and parentheses.
