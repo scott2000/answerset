@@ -83,3 +83,39 @@ def test_issue_13_alternative_in_bracket_in_word_neither():
     given = 'tar en grad i X'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>tar en </span><span class=typeMissed>(master/bachelor)</span><span class=typeGood>grad i X</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_1():
+    correct = 'point(ing/s) (at)'
+    given = 'pointing at'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(</span><span class=typeGood>ing</span><span class=typeMissed>/s)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_2():
+    correct = 'point(ing/s) (at)'
+    given = 'pointing'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(</span><span class=typeGood>ing</span><span class=typeMissed>/s) (at)</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_3():
+    correct = 'point(ing/s) (at)'
+    given = 'points at'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/</span><span class=typeGood>s</span><span class=typeMissed>)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_4():
+    correct = 'point(ing/s) (at)'
+    given = 'points'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/</span><span class=typeGood>s</span><span class=typeMissed>) (at)</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_5():
+    correct = 'point(ing/s) (at)'
+    given = 'point at'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/s)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+
+def test_issue_16_adjacent_bracketed_alternatives_6():
+    correct = 'point(ing/s) (at)'
+    given = 'point'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/s) (at)</span></code></div>'

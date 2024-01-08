@@ -63,7 +63,7 @@ This add-on is implemented as a monkey patch replacing
 `Collection.compare_answer` (Anki 2.1.56+) or `Reviewer.correct` (up to Anki
 2.1.54), which are responsible for generating the differences. Since it replaces
 these functions, it is not guaranteed to work in future updates. I have tested
-it in Anki 2.1.40 through 2.1.65.
+it in Anki 2.1.40 through Anki 23.12.1.
 
 The answer rearranging algorithm uses the
 [Longest Common Subsequence](https://en.wikipedia.org/wiki/Longest_common_subsequence)
@@ -75,6 +75,10 @@ a similar algorithm to the default implementation. Comments are only compared if
 they are given when typing the answer in.
 
 ## Changelog
+
+2024-01-08:
+
+* Use new implementation for alternatives to fix issue.
 
 2023-12-27:
 

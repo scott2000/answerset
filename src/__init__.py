@@ -24,7 +24,7 @@ import difflib
 import html
 import unicodedata as ucd
 import re
-from typing import Iterator
+from typing import Iterator, Optional
 
 try:
     import aqt
@@ -53,7 +53,9 @@ space_re = re.compile(r" +")
 prefix_limit = 3
 max_similarity = 0x7fffffff
 
-bracket_chars = '()[]'
+bracket_start = '(['
+bracket_end = ')]'
+bracket_chars = bracket_start + bracket_end
 whitespace_chars = ' \t\r\n'
 keep_in_alternative_chars = whitespace_chars + bracket_chars
 junk_chars = config_ignored_characters.replace(' ', whitespace_chars) + bracket_chars
@@ -280,7 +282,7 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     return string, ''
 
-def find_outer_bracket_ranges(input: Iterator[str]) -> list[tuple[int, int]]:
+def find_outer_bracket_ranges(input: Iterator[str], lenient: bool = False) -> list[tuple[int, int]]:
     found_ranges = []
     expected_ends = []
     for i, ch in enumerate(input):
@@ -292,7 +294,10 @@ def find_outer_bracket_ranges(input: Iterator[str]) -> list[tuple[int, int]]:
             try:
                 start_index, end_char = expected_ends.pop()
             except IndexError:
-                return []
+                if not lenient:
+                    return []
+
+                continue
 
             if end_char != ch:
                 return []
@@ -300,7 +305,7 @@ def find_outer_bracket_ranges(input: Iterator[str]) -> list[tuple[int, int]]:
             if not expected_ends:
                 found_ranges.append((start_index, i + 1))
 
-    if expected_ends:
+    if expected_ends and not lenient:
         return []
 
     return found_ranges
@@ -385,116 +390,71 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>"
 
-def is_partial_bracket(segment: list[str]) -> bool:
-    """Check if the segment looks like the start or end of a bracketed alternative."""
-
-    if not any(ch in bracket_chars for ch in segment):
-        return False
-
-    # Remove any non-bracket junk characters
-    segment = list(filter(lambda ch: ch in bracket_chars or not is_junk(ch), segment))
-
-    # Add a missing bracket if appropriate
-    if segment[0] == '(':
-        segment = segment + [')']
-    elif segment[0] == '[':
-        segment = segment + [']']
-    elif segment[-1] == ')':
-        segment = ['('] + segment
-    elif segment[-1] == ']':
-        segment = ['['] + segment
-    else:
-        return False
-
-    # Make sure that the brackets are now fully balanced
-    return not remove_bracketed_text(segment)
-
-def strip_segment_whitespace(segment: list[str], alpha_before: bool, alpha_after: bool) -> list[str]:
-    """Strip whitespace from ends of a segment which are next to whitespace."""
-
-    # Find start and end of fully stripped segment
-    start = None
-    end = None
-    for i, ch in enumerate(segment):
-        if ch in whitespace_chars:
-            continue
-
-        if start is None:
-            start = i
-
-        end = i + 1
-
-    # If segment is all whitespace, return empty list
-    if start is None or end is None:
-        return []
-
-    # If no whitespace before segment, don't strip start
-    if alpha_before:
-        start = None
-
-    # If no whitespace after segment, don't strip end
-    if alpha_after:
-        end = None
-
-    return segment[start:end]
-
-def is_alternative(original_segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
+def find_potential_alternative_end(segment: list[str], bracket_start_chars: str, bracket_end_chars: str, alpha_after: bool) -> Optional[int]:
     """
-    Check if a missing segment is part of an alternative. An alternative is
+    Find the end of a missing alternative which starts with a slash.
+    Alternatives should end at the first space, unless inside of brackets.
+    If there are no spaces or brackets, then the alternative is the entire
+    segment, in which case it must not be followed by an alpha character.
+    Slashes inside the alternative must be followed by alpha characters.
+    """
+
+    end = None
+    require_alpha = False
+
+    for i, ch in enumerate(segment):
+        if require_alpha and not ch.isalpha():
+            return None
+
+        require_alpha = ch == '/'
+
+        if ch in bracket_start_chars:
+            if ch is None:
+                end = i
+            break
+
+        if ch in bracket_end_chars:
+            end = i + 1
+            break
+
+        if end is None and ch in whitespace_chars:
+            end = i
+
+    if require_alpha:
+        return None
+
+    if end is None and not alpha_after:
+        return len(segment)
+
+    return end
+
+def remove_alternative(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
+    """
+    Remove an alternative from the start/end of a segment. An alternative is
     a series of single words separated by slashes, which allows the user to
     pick any one of the words. If a missing segment is part of an alternative,
     no error should be reported.
     """
 
-    # Filter out junk characters except for whitespace and brackets
-    segment = list(filter(lambda ch: ch in keep_in_alternative_chars or not is_junk(ch), original_segment))
+    if alpha_before and segment and segment[0] == '/':
+        end = find_potential_alternative_end(segment, bracket_start, bracket_end, alpha_after)
+        if end is not None:
+            segment = segment[end:]
 
-    # Strip whitespace on ends which already have whitespace
-    segment = strip_segment_whitespace(segment, alpha_before, alpha_after)
+    if alpha_after and segment and segment[-1] == '/':
+        # Use the same method, but reverse the segment first to search from the end backwards
+        rev_end = find_potential_alternative_end(segment[::-1], bracket_end, bracket_start, alpha_before)
+        if rev_end is not None:
+            segment = segment[:-rev_end]
 
-    # There can be no spaces or brackets inside the alternative unless the
-    # alternative looks like it is fully in brackets
-    if any(ch in keep_in_alternative_chars for ch in segment) and not is_partial_bracket(original_segment):
-        return False
-
-    # Now we can filter out all junk characters
-    segment = list(filter(lambda ch: not is_junk(ch), original_segment))
-
-    if not segment:
-        return False
-
-    first, last = segment[0], segment[-1]
-
-    # If a character was filtered out at the start or end, treat it as whitespace
-    if first != original_segment[0]:
-        alpha_before = False
-    if last != original_segment[-1]:
-        alpha_after = False
-
-    # Missing alternative segment must have '/' on one side but not other
-    if (first == '/') == (last == '/'):
-        return False
-
-    # First character must be either '/' or alphabetic
-    if first != '/' and not first.isalpha():
-        return False
-
-    # Last character must be either '/' or alphabetic
-    if last != '/' and not last.isalpha():
-        return False
-
-    expect_alpha_before = first == '/'
-    expect_alpha_after = last == '/'
-
-    # There should be an alphabetic character only next to slashes
-    return alpha_before == expect_alpha_before and alpha_after == expect_alpha_after
+    return segment
 
 def remove_bracketed_text(segment: list[str]) -> list[str]:
     """Remove all bracketed text from a segment."""
 
     result = []
     last_end = 0
-    for start, end in find_outer_bracket_ranges(segment):
+    for start, end in find_outer_bracket_ranges(segment, lenient=True):
         result.extend(segment[last_end:start])
         last_end = end
 
@@ -513,15 +473,14 @@ def is_missing_allowed(segment: list[str], alpha_before: bool, alpha_after: bool
     if not config_lenient_validation:
         return False
 
+    # Remove any alternatives, since they are allowed to be missing
+    segment = remove_alternative(segment, alpha_before, alpha_after)
+
     # Remove bracketed text, since it is allowed to be missing
     segment = remove_bracketed_text(segment)
 
     # If the remainder is all junk, it is allowed to be missing
-    if all(is_junk(ch) for ch in segment):
-        return True
-
-    # Alternatives like "/abc", "/abc/def", and "abc/" can be missing
-    return is_alternative(segment, alpha_before, alpha_after)
+    return all(is_junk(ch) for ch in segment)
 
 def isalpha_at_index(s: list[str], i: int) -> bool:
     return 0 <= i < len(s) and s[i].isalpha()
@@ -550,7 +509,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
     correct_index = 0
 
     # Iterate through matching blocks to render the diff
-    s = difflib.SequenceMatcher(is_junk, given, correct, autojunk=False)
+    s = difflib.SequenceMatcher(None, given, correct, autojunk=False)
     for i, j, cnt in s.get_matching_blocks():
         # Check for bad text in "given"
         if given_index < i:
