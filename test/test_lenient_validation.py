@@ -95,3 +95,31 @@ def test_missing_alternative_with_junk_before_slash():
     given = 'test abc test'
     result = compare_answer_no_html(correct, given)
     assert 'typearrow' in result
+
+def test_several_lenient_validation_together():
+    options = [
+        ('aa/bb/cc ', 'aa '),
+        ('aa/bb/cc ', 'aa/bb '),
+        ('aa/bb/cc ', 'aa/cc '),
+        ('aa/bb/cc ', 'bb '),
+        ('aa/bb/cc ', 'bb/cc '),
+        ('aa/bb/cc ', 'cc '),
+        ('[aa/bb/cc] ', 'aa '),
+        ('[aa/bb/cc] ', 'aa/bb '),
+        ('[aa/bb/cc] ', 'aa/cc '),
+        ('[aa/bb/cc] ', 'bb '),
+        ('[aa/bb/cc] ', 'bb/cc '),
+        ('[aa/bb/cc] ', 'cc '),
+        ('[aa/bb/cc] ', ''),
+    ]
+
+    bTrans = str.maketrans('abc', 'def')
+    cTrans = str.maketrans('abc', 'ghi')
+
+    for correctA, givenA in options:
+        for correctB, givenB in options:
+            for correctC, givenC in options:
+                correct = f'x {correctA}{correctB.translate(bTrans)}{correctC.translate(cTrans)}y'
+                given = f'x {givenA}{givenB.translate(bTrans)}{givenC.translate(cTrans)}y'
+                result = compare_answer_no_html(correct, given)
+                assert 'typearrow' not in result, f'{given} :: {correct}'
