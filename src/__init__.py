@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2023 Scott Taylor
+# Copyright (c) 2024 Scott Taylor
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -404,7 +404,7 @@ def find_potential_alternative_end(segment: list[str], bracket_start_chars: str,
 
     for i, ch in enumerate(segment):
         if require_alpha and not ch.isalpha():
-            return None
+            return end
 
         require_alpha = ch == '/'
 
@@ -420,10 +420,7 @@ def find_potential_alternative_end(segment: list[str], bracket_start_chars: str,
         if end is None and ch in whitespace_chars:
             end = i
 
-    if require_alpha:
-        return None
-
-    if end is None and not alpha_after:
+    if end is None and not require_alpha and not alpha_after:
         return len(segment)
 
     return end
