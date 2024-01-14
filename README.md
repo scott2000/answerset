@@ -76,6 +76,10 @@ they are given when typing the answer in.
 
 ## Changelog
 
+2024-01-14:
+
+* Fix issue with finding differences for certain alternatives.
+
 2024-01-08:
 
 * Use new implementation for alternatives to fix issue.

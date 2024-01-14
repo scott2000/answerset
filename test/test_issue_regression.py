@@ -88,7 +88,7 @@ def test_issue_16_adjacent_bracketed_alternatives_1():
     correct = 'point(ing/s) (at)'
     given = 'pointing at'
     result = compare_answer_no_html(correct, given)
-    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(</span><span class=typeGood>ing</span><span class=typeMissed>/s)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(</span><span class=typeGood>ing</span><span class=typeMissed>/s) (</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
 
 def test_issue_16_adjacent_bracketed_alternatives_2():
     correct = 'point(ing/s) (at)'
@@ -100,7 +100,7 @@ def test_issue_16_adjacent_bracketed_alternatives_3():
     correct = 'point(ing/s) (at)'
     given = 'points at'
     result = compare_answer_no_html(correct, given)
-    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/</span><span class=typeGood>s</span><span class=typeMissed>)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/</span><span class=typeGood>s</span><span class=typeMissed>) (</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
 
 def test_issue_16_adjacent_bracketed_alternatives_4():
     correct = 'point(ing/s) (at)'
@@ -112,10 +112,40 @@ def test_issue_16_adjacent_bracketed_alternatives_5():
     correct = 'point(ing/s) (at)'
     given = 'point at'
     result = compare_answer_no_html(correct, given)
-    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/s)</span><span class=typeGood> </span><span class=typeMissed>(</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
+    assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/s) (</span><span class=typeGood>at</span><span class=typeMissed>)</span></code></div>'
 
 def test_issue_16_adjacent_bracketed_alternatives_6():
     correct = 'point(ing/s) (at)'
     given = 'point'
     result = compare_answer_no_html(correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>point</span><span class=typeMissed>(ing/s) (at)</span></code></div>'
+
+def test_issue_18_overlapping_alternatives_1():
+    correct = 'apprenticeship as a/an X'
+    given = 'apprenticeship as a X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>apprenticeship as a</span><span class=typeMissed>/an</span><span class=typeGood> X</span></code></div>'
+
+def test_issue_18_overlapping_alternatives_2():
+    correct = 'apprenticeship as a/an X'
+    given = 'apprenticeship as an X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>apprenticeship as </span><span class=typeMissed>a/</span><span class=typeGood>an X</span></code></div>'
+
+def test_issue_18_overlapping_alternatives_3():
+    correct = 'apprenticeship as an/a X'
+    given = 'apprenticeship as an X'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>apprenticeship as an</span><span class=typeMissed>/a</span><span class=typeGood> X</span></code></div>'
+
+def test_issue_18_overlapping_alternatives_4():
+    correct = 'start/starting'
+    given = 'start'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>start</span><span class=typeMissed>/starting</span></code></div>'
+
+def test_issue_18_overlapping_alternatives_5():
+    correct = 'start/starting'
+    given = 'starting'
+    result = compare_answer_no_html(correct, given)
+    assert result == '<div><code id=typeans><span class=typeMissed>start/</span><span class=typeGood>starting</span></code></div>'

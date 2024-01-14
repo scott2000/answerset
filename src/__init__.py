@@ -506,26 +506,32 @@ def render_diffs(given, correct, given_elems, correct_elems):
     correct_index = 0
 
     # Iterate through matching blocks to render the diff
-    s = difflib.SequenceMatcher(None, given, correct, autojunk=False)
+    s = difflib.SequenceMatcher(is_junk, given, correct, autojunk=False)
     for i, j, cnt in s.get_matching_blocks():
-        # Check for bad text in "given"
-        if given_index < i:
-            has_error = True
-            given_elem += bad(''.join(given[given_index:i]))
+        bad_text = ''.join(given[given_index:i])
+        missing_text = ''.join(correct[correct_index:j])
 
         # Check for missing text in "correct"
-        if correct_index < j:
-            correct_elem += missed(''.join(correct[correct_index:j]))
+        if missing_text:
+            correct_elem += missed(missing_text)
 
-            # If completely missing in "given", add hyphen
-            if given_index == i:
+            # If nothing was wrong in "given", it might be a case for lenient validation
+            if bad_text in missing_text:
                 alpha_before = isalpha_at_index(correct, correct_index - 1)
                 alpha_after = isalpha_at_index(correct, j)
 
                 # Check if should be ignored with lenient validation
                 if not is_missing_allowed(correct[correct_index:j], alpha_before, alpha_after):
                     has_error = True
-                    given_elem += bad('-')
+                    given_elem += bad(bad_text or '-')
+
+                # We already handled the bad text, so mark it as empty now
+                bad_text = None
+
+        # Check for bad text in "given"
+        if bad_text:
+            has_error = True
+            given_elem += bad(bad_text)
 
         if not cnt:
             continue

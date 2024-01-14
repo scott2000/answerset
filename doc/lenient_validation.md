@@ -37,7 +37,9 @@ And if you type "starting" for `start(ing)`, it shows:
 Sometimes there may be multiple similar words in an answer which are all
 correct. If you separate these words with slashes (`/`), lenient validation
 will accept any one of them, and will not mark the missing alternatives as
-incorrect.
+incorrect. Note: if one of the words is a part of the other, make sure to put
+it first or it may not always work properly. For instance, use `a/an` instead
+of `an/a`, and use `start/starting` instead of `starting/start`.
 
 For example, if you type "set in my ways" for `set in one's/my ways`, it shows:
 
