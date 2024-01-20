@@ -1,4 +1,4 @@
-from src import compare_answer_no_html
+from answerset import compare_answer_no_html
 
 def test_issue_2_alternative():
     correct = "be set in one's/my ways"
