@@ -1,14 +1,12 @@
 PYTHON = python
 
-SOURCE_FILES = src/__init__.py src/config.json src/config.md
+SOURCE_FILES = $(wildcard answerset/*.py) answerset/config.json answerset/config.md
 OUTPUT_FILE = answerset.ankiaddon
 TEST_REPORT_FILE = pytest-junit.xml
 
 GENERATED_FILES = $(TEST_REPORT_FILE) $(OUTPUT_FILE)
-CACHE_DIRS = src/__pycache__ test/__pycache__ .pytest_cache
+CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache
 INSTALL_DIR = ~/Library/'Application Support'/Anki2
-
-.PHONY: build test clean install
 
 build: clean test $(OUTPUT_FILE)
 
@@ -23,3 +21,5 @@ test:
 
 $(OUTPUT_FILE): $(SOURCE_FILES)
 	zip -j $@ $^
+
+.PHONY: build test clean install

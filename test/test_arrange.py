@@ -1,4 +1,4 @@
-from src import arrange
+from answerset.arrange import arrange
 
 def test_arrange_empty():
     result = arrange([], [])
