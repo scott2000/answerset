@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from answerset.compare import compare_answer_no_html
+from .compare import compare_answer_no_html
 
 # Up to Anki 2.1.54
 try:

@@ -1,4 +1,4 @@
-import answerset.config as config
+from . import config
 
 prefix_limit = 3
 max_similarity = 0x7fffffff
