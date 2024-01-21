@@ -1,6 +1,6 @@
 from typing import Iterator
 
-import answerset.config as config
+from . import config
 
 def is_junk(ch: str):
     return len(ch) == 1 and ord(ch) in config.junk_trans

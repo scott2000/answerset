@@ -1,10 +1,10 @@
 import html
 import unicodedata as ucd
 
-from answerset.arrange import arrange
-import answerset.config as config
-from answerset.diff import diff
-import answerset.util as util
+from . import config, util
+
+from .arrange import arrange
+from .diff import diff
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """

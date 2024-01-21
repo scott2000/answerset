@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import answerset.config as config
-import answerset.util as util
+from . import config, util
 
 def is_alternative_stop(ch: str) -> bool:
     """Check if a character should stop an alternative outside of brackets."""
