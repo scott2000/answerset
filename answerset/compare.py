@@ -1,10 +1,9 @@
-import difflib
 import html
 import unicodedata as ucd
-from typing import Optional
 
 from answerset.arrange import arrange
 import answerset.config as config
+from answerset.diff import diff
 import answerset.util as util
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
@@ -94,112 +93,17 @@ def group_combining(string: str) -> list[str]:
 
     return parts
 
-def is_junk(ch: str):
-    return len(ch) == 1 and ord(ch) in config.junk_trans
-
 def good(s: str) -> str:
-    return f"<span class=typeGood>{html.escape(s)}</span>"
+    return f"<span class=typeGood>{html.escape(s)}</span>" if s else ''
 
 def bad(s: str) -> str:
-    return f"<span class=typeBad>{html.escape(s)}</span>"
+    return f"<span class=typeBad>{html.escape(s)}</span>" if s else ''
 
 def missed(s: str) -> str:
-    return f"<span class=typeMissed>{html.escape(s)}</span>"
+    return f"<span class=typeMissed>{html.escape(s)}</span>" if s else ''
 
 def not_code(s: str) -> str:
-    return f"</code>{s}<code id=typeans>"
-
-def find_potential_alternative_end(segment: list[str], bracket_start_chars: str, bracket_end_chars: str, alpha_after: bool) -> Optional[int]:
-    """
-    Find the end of a missing alternative which starts with a slash.
-    Alternatives should end at the first space, unless inside of brackets.
-    If there are no spaces or brackets, then the alternative is the entire
-    segment, in which case it must not be followed by an alpha character.
-    Slashes inside the alternative must be followed by alpha characters.
-    """
-
-    end = None
-    require_alpha = False
-
-    for i, ch in enumerate(segment):
-        if require_alpha and not ch.isalpha():
-            return end
-
-        require_alpha = ch == '/'
-
-        if ch in bracket_start_chars:
-            if ch is None:
-                end = i
-            break
-
-        if ch in bracket_end_chars:
-            end = i + 1
-            break
-
-        if end is None and ch in config.whitespace_chars:
-            end = i
-
-    if end is None and not require_alpha and not alpha_after:
-        return len(segment)
-
-    return end
-
-def remove_alternative(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
-    """
-    Remove an alternative from the start/end of a segment. An alternative is
-    a series of single words separated by slashes, which allows the user to
-    pick any one of the words. If a missing segment is part of an alternative,
-    no error should be reported.
-    """
-
-    if alpha_before and segment and segment[0] == '/':
-        end = find_potential_alternative_end(segment, config.bracket_start, config.bracket_end, alpha_after)
-        if end is not None:
-            segment = segment[end:]
-
-    if alpha_after and segment and segment[-1] == '/':
-        # Use the same method, but reverse the segment first to search from the end backwards
-        rev_end = find_potential_alternative_end(segment[::-1], config.bracket_end, config.bracket_start, alpha_before)
-        if rev_end is not None:
-            segment = segment[:-rev_end]
-
-    return segment
-
-def remove_bracketed_text(segment: list[str]) -> list[str]:
-    """Remove all bracketed text from a segment."""
-
-    result = []
-    last_end = 0
-    for start, end in util.find_outer_bracket_ranges(segment, lenient=True):
-        result.extend(segment[last_end:start])
-        last_end = end
-
-    result.extend(segment[last_end:])
-
-    return result
-
-def is_missing_allowed(segment: list[str], alpha_before: bool, alpha_after: bool) -> bool:
-    """
-    Check whether a segment of text is allowed to be missing. If it is allowed
-    to be missing, then it will not be reported as incorrect if it is missing.
-    Otherwise, it will be shown as incorrect if it is missing.
-    """
-
-    # Missing text is only allowed if lenient validation is enabled
-    if not config.lenient_validation:
-        return False
-
-    # Remove any alternatives, since they are allowed to be missing
-    segment = remove_alternative(segment, alpha_before, alpha_after)
-
-    # Remove bracketed text, since it is allowed to be missing
-    segment = remove_bracketed_text(segment)
-
-    # If the remainder is all junk, it is allowed to be missing
-    return all(is_junk(ch) for ch in segment)
-
-def isalpha_at_index(s: list[str], i: int) -> bool:
-    return 0 <= i < len(s) and s[i].isalpha()
+    return f"</code>{s}<code id=typeans>" if s else ''
 
 def render_diffs(given, correct, given_elems, correct_elems):
     """Create the diff comparison strings for each part."""
@@ -224,43 +128,29 @@ def render_diffs(given, correct, given_elems, correct_elems):
     given_index = 0
     correct_index = 0
 
-    # Iterate through matching blocks to render the diff
-    s = difflib.SequenceMatcher(is_junk, given, correct, autojunk=False)
-    for i, j, cnt in s.get_matching_blocks():
-        bad_text = ''.join(given[given_index:i])
-        missing_text = ''.join(correct[correct_index:j])
+    # Iterate through errors to render the diff
+    for error in diff(correct, given):
+        given_start, given_end = error.given_range
+        correct_start, correct_end = error.correct_range
 
-        # Check for missing text in "correct"
-        if missing_text:
-            correct_elem += missed(missing_text)
+        given_elem += good(''.join(given[given_index:given_start]))
+        correct_elem += good(''.join(correct[correct_index:correct_start]))
 
-            # If nothing was wrong in "given", it might be a case for lenient validation
-            if bad_text in missing_text:
-                alpha_before = isalpha_at_index(correct, correct_index - 1)
-                alpha_after = isalpha_at_index(correct, j)
-
-                # Check if should be ignored with lenient validation
-                if not is_missing_allowed(correct[correct_index:j], alpha_before, alpha_after):
-                    has_error = True
-                    given_elem += bad(bad_text or '-')
-
-                # We already handled the bad text, so mark it as empty now
-                bad_text = None
-
-        # Check for bad text in "given"
-        if bad_text:
+        error_text = ''.join(given[given_start:given_end])
+        if error_text:
             has_error = True
-            given_elem += bad(bad_text)
+            given_elem += bad(error_text)
+        elif error.report:
+            has_error = True
+            given_elem += bad('-')
 
-        if not cnt:
-            continue
+        correct_elem += missed(''.join(correct[correct_start:correct_end]))
 
-        given_index = i + cnt
-        correct_index = j + cnt
+        given_index = given_end
+        correct_index = correct_end
 
-        # Add good text for both
-        given_elem += good(''.join(given[i:given_index]))
-        correct_elem += good(''.join(correct[j:correct_index]))
+    given_elem += good(''.join(given[given_index:]))
+    correct_elem += good(''.join(correct[correct_index:]))
 
     # If a comment wasn't diffed, add it back
     if correct_comment and not given_comment:
@@ -295,8 +185,8 @@ def compare_answer_no_html(correct: str, given: str) -> str:
 
     # Find bracket ranges in both answers (if config option enabled)
     if config.ignore_separators_in_brackets:
-        correct_bracket_ranges = util.find_outer_bracket_ranges(correct)
-        given_bracket_ranges = util.find_outer_bracket_ranges(given)
+        correct_bracket_ranges = util.find_bracket_ranges(correct)
+        given_bracket_ranges = util.find_bracket_ranges(given)
     else:
         correct_bracket_ranges = []
         given_bracket_ranges = []

@@ -36,6 +36,13 @@ answers to match character-for-character. For instance, "Ignored Characters"
 and text in brackets or parentheses may be left out in answers, and it will
 not be marked as an error.
 
+## Ignore Case
+
+Valid Options: `false` or `true`
+
+If set to `true`, uppercase and lowercase letters may be used interchangably
+when answering. For instance, you could type "anki" when the answer is "Anki".
+
 ## Ignore Separators in Brackets
 
 Valid Options: `false` or `true`

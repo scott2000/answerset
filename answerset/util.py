@@ -1,6 +1,11 @@
 from typing import Iterator
 
-def find_outer_bracket_ranges(input: Iterator[str], lenient: bool = False) -> list[tuple[int, int]]:
+import answerset.config as config
+
+def is_junk(ch: str):
+    return len(ch) == 1 and ord(ch) in config.junk_trans
+
+def find_bracket_ranges(input: Iterator[str], lenient: bool = False, nested: bool = False) -> list[tuple[int, int]]:
     found_ranges = []
     expected_ends = []
     for i, ch in enumerate(input):
@@ -20,7 +25,7 @@ def find_outer_bracket_ranges(input: Iterator[str], lenient: bool = False) -> li
             if end_char != ch:
                 return []
 
-            if not expected_ends:
+            if nested or not expected_ends:
                 found_ranges.append((start_index, i + 1))
 
     if expected_ends and not lenient:

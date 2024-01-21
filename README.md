@@ -74,11 +74,21 @@ Then, combining characters are grouped for the final difference, which then uses
 a similar algorithm to the default implementation. Comments are only compared if
 they are given when typing the answer in.
 
+The diff algorithm is also a modified version of the LCS, with a preference for
+grouping error regions together. It also has been modified to support "lenient
+validation", where brackets, text separated by slashes, and certain other
+characters are allowed to be missing from the given answer.
+
 ## Changelog
+
+2024-01-20:
+
+* Rewrote diff algorithm to handle lenient validation consistently.
+* Added config option to ignore case when comparing answers.
 
 2024-01-14:
 
-* Fix issue with finding differences for certain alternatives.
+* Fixed issue with finding differences for certain alternatives.
 
 2024-01-08:
 
@@ -86,7 +96,7 @@ they are given when typing the answer in.
 
 2023-12-27:
 
-* Fix bug with alternatives in brackets next to other words.
+* Fixed bug with alternatives in brackets next to other words.
 * Allow whitespace in alternatives when inside of brackets.
 
 2023-12-11:
