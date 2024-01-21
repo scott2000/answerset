@@ -20,6 +20,7 @@ def get_config_var(var_name, default_value):
 answer_choice_comments = get_config_var('Enable Answer Choice Comments [...]', False)
 answer_comments = get_config_var('Enable Answer Comments (...)', False)
 lenient_validation = get_config_var('Enable Lenient Validation', True)
+ignore_case = get_config_var('Ignore Case', True)
 ignore_separators_in_brackets = get_config_var('Ignore Separators in Brackets', True)
 ignored_characters = get_config_var('Ignored Characters', ' .-')
 

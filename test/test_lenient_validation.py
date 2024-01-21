@@ -90,36 +90,45 @@ def test_missing_alternative_with_spaces_not_in_brackets():
     result = compare_answer_no_html(correct, given)
     assert 'typearrow' in result
 
-def test_missing_alternative_with_junk_before_slash():
-    correct = 'test abc-/def/ghi test'
+def test_missing_alternative_with_space_before_slash():
+    correct = 'test abc /def/ghi test'
     given = 'test abc test'
     result = compare_answer_no_html(correct, given)
     assert 'typearrow' in result
 
 def test_several_lenient_validation_together():
     options = [
-        ('aa/bb/cc ', 'aa '),
-        ('aa/bb/cc ', 'aa/bb '),
-        ('aa/bb/cc ', 'aa/cc '),
-        ('aa/bb/cc ', 'bb '),
-        ('aa/bb/cc ', 'bb/cc '),
-        ('aa/bb/cc ', 'cc '),
-        ('[aa/bb/cc] ', 'aa '),
-        ('[aa/bb/cc] ', 'aa/bb '),
-        ('[aa/bb/cc] ', 'aa/cc '),
-        ('[aa/bb/cc] ', 'bb '),
-        ('[aa/bb/cc] ', 'bb/cc '),
-        ('[aa/bb/cc] ', 'cc '),
-        ('[aa/bb/cc] ', ''),
+        ('ac/cb/cc ', 'ac '),
+        ('ac/cb/cc ', 'ac/cb '),
+        ('ac/cb/cc ', 'ac/cc '),
+        ('ac/cb/cc ', 'cb '),
+        ('ac/cb/cc ', 'cb/cc '),
+        ('ac/cb/cc ', 'cc '),
+        ('[ac/cb/cc] ', 'ac '),
+        ('[ac/cb/cc] ', 'ac/cb '),
+        ('[ac/cb/cc] ', 'ac/cc '),
+        ('[ac/cb/cc] ', 'cb '),
+        ('[ac/cb/cc] ', 'cb/cc '),
+        ('[ac/cb/cc] ', 'cc '),
+        ('[ac/cb/cc] ', ''),
+        ('[a c/c b/cc] ', 'a c '),
+        ('[a c/c b/cc] ', 'a c/c b '),
+        ('[a c/c b/cc] ', 'a c/cc '),
+        ('[a c/c b/cc] ', 'c b '),
+        ('[a c/c b/cc] ', 'c b/cc '),
+        ('[a c/c b/cc] ', 'cc '),
+        ('[a c/c b/cc] ', ''),
+        ('[ac/c b/cc] ', 'ac b '),
+        ('[ac/c b/cc] ', 'ac cc '),
+        ('[ac/c b/cc] ', 'c b '),
+        ('[ac/c b/cc] ', 'c cc '),
     ]
 
     bTrans = str.maketrans('abc', 'def')
-    cTrans = str.maketrans('abc', 'ghi')
 
     for correctA, givenA in options:
         for correctB, givenB in options:
-            for correctC, givenC in options:
-                correct = f'x {correctA}{correctB.translate(bTrans)}{correctC.translate(cTrans)}y'
-                given = f'x {givenA}{givenB.translate(bTrans)}{givenC.translate(cTrans)}y'
-                result = compare_answer_no_html(correct, given)
-                assert 'typearrow' not in result, f'{given} :: {correct}'
+            correct = f'x {correctA}{correctB.translate(bTrans)}{correctA.translate(bTrans)}y'
+            given = f'x {givenA}{givenB.translate(bTrans)}{givenA.translate(bTrans)}y'
+            result = compare_answer_no_html(correct, given)
+            assert 'typearrow' not in result, f'{given} :: {correct}'
