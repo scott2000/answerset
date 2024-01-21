@@ -224,6 +224,10 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
         jumps: dict[int, list[int]] = find_alternative_jumps(correct, correct_bracket_ranges)
         for start, end in correct_bracket_ranges:
             jumps.setdefault(end, []).append(start)
+
+        # Make sure the jumps are sorted for consistency
+        for end in jumps:
+            jumps[end].sort()
     else:
         jumps = {}
 
@@ -249,10 +253,6 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
 
             best_diff: Optional[Diff] = None
 
-            # Handle "given" character matching "correct" character
-            if given_char == correct_char:
-                best_diff = best_diff_by_correct_and_prev_given[correct_end - 1].add_matched()
-
             if correct_char:
                 report_missing = not config.lenient_validation or not util.is_junk(correct_char)
 
@@ -271,6 +271,12 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
             if given_char:
                 best_diff = best_diff_by_correct_and_prev_given[correct_end] \
                     .add_error(ErrorRange((correct_end, correct_end), (given_end - 1, given_end), True)) \
+                    .pick_best(best_diff)
+
+            # Handle "given" character matching "correct" character
+            if given_char == correct_char:
+                best_diff = best_diff_by_correct_and_prev_given[correct_end - 1] \
+                    .add_matched() \
                     .pick_best(best_diff)
 
             best_diff_by_correct[correct_end] = best_diff

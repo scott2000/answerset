@@ -81,7 +81,7 @@ characters are allowed to be missing from the given answer.
 
 ## Changelog
 
-2024-01-20:
+2024-01-21:
 
 * Rewrote diff algorithm to handle lenient validation consistently.
 * Added config option to ignore case when comparing answers.

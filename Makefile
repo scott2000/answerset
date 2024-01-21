@@ -6,12 +6,16 @@ TEST_REPORT_FILE = pytest-junit.xml
 
 GENERATED_FILES = $(TEST_REPORT_FILE) $(OUTPUT_FILE)
 CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache
-INSTALL_DIR = ~/Library/'Application Support'/Anki2
+INSTALL_DIR = ~/Library/'Application Support'/Anki2/addons21/answerset
 
 build: clean test $(OUTPUT_FILE)
 
 install: $(SOURCE_FILES)
-	ln -f $^ $(INSTALL_DIR)/addons21/answerset/
+	[ -d $(INSTALL_DIR) ] || mkdir $(INSTALL_DIR)
+	ln -f $^ $(INSTALL_DIR)
+
+uninstall:
+	rm -rf $(INSTALL_DIR)
 
 clean:
 	rm -rf $(CACHE_DIRS) $(GENERATED_FILES)
@@ -22,4 +26,4 @@ test:
 $(OUTPUT_FILE): $(SOURCE_FILES)
 	zip -j $@ $^
 
-.PHONY: build test clean install
+.PHONY: build install uninstall clean test
