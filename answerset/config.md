@@ -36,6 +36,15 @@ answers to match character-for-character. For instance, "Ignored Characters"
 and text in brackets or parentheses may be left out in answers, and it will
 not be marked as an error.
 
+## Equivalent Strings
+
+This option is an array of arrays of strings which should be considered to be
+equivalent to each other when checking answers. These strings may contain
+special characters such as spaces or apostrophes, but be careful to follow the
+correct JSON format. To disable this option, leave it empty (like `[]`).
+
+Example: `[["I am", "I'm", "Im"], ["'re", " are"]]`
+
 ## Ignore Case
 
 Valid Options: `false` or `true`

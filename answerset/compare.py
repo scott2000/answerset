@@ -5,6 +5,7 @@ from . import config, util
 
 from .arrange import arrange
 from .diff import diff
+from .group import group_combining
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """
@@ -65,33 +66,6 @@ def split_options(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) 
             stripped.append(split_comment(s, '[', ']', config.answer_choice_comments))
 
     return stripped
-
-def is_combining(ch: str) -> bool:
-    """Check if a character is a Unicode combining mark."""
-
-    return ucd.category(ch).startswith('M')
-
-def group_combining(string: str) -> list[str]:
-    """Group combining characters with the previous character."""
-
-    parts = []
-    current = ''
-    for ch in string:
-        if is_combining(ch):
-            if not current:
-                current = '\xa0'
-
-            current += ch
-        else:
-            if current:
-                parts.append(current)
-
-            current = ch
-
-    if current:
-        parts.append(current)
-
-    return parts
 
 def good(s: str) -> str:
     return f"<span class=typeGood>{html.escape(s)}</span>" if s else ''
