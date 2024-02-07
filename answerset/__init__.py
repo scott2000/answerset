@@ -21,13 +21,24 @@
 # SOFTWARE.
 
 from .compare import compare_answer_no_html
+from .config import Config
+
+def get_config() -> Config:
+    try:
+        import aqt
+        return Config(aqt.mw.addonManager.getConfig(__name__))
+    except:
+        return Config()
+
+# Load user config
+user_config = get_config()
 
 # Up to Anki 2.1.54
 try:
     from aqt.reviewer import Reviewer
 
     def correct(self, given: str, correct: str, **kwargs) -> str:
-        return compare_answer_no_html(correct, given)
+        return compare_answer_no_html(user_config, correct, given)
 
     Reviewer.correct = correct
 except:
@@ -49,7 +60,7 @@ try:
         # Strip HTML tags
         correct = html_to_text_line(correct)
 
-        return compare_answer_no_html(correct, given)
+        return compare_answer_no_html(user_config, correct, given)
 
     Collection.compare_answer = compare_answer
 except:

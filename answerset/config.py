@@ -2,13 +2,7 @@ import re
 
 from .group import group_combining
 
-try:
-    import aqt
-    config = aqt.mw.addonManager.getConfig(__name__)
-except:
-    config = None
-
-def get_config_var(var_name: str, default_value):
+def get_config_var(config, var_name: str, default_value):
     try:
         value = config[var_name]
     except:
@@ -22,7 +16,7 @@ def get_config_var(var_name: str, default_value):
 def lowercase_if_ignore_case(s: str, ignore_case: bool) -> str:
     return s.lower() if ignore_case else s
 
-def get_equivalent_strings_config_var(var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
+def get_equivalent_strings_config_var(config, var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
     return list(
         filter(
             lambda xs: len(xs) >= 2,
@@ -35,32 +29,32 @@ def get_equivalent_strings_config_var(var_name: str, default_value: list[str], i
                     for x in xs
                     if x and type(x) is str
                 ]
-                for xs in get_config_var(var_name, default_value)
+                for xs in get_config_var(config, var_name, default_value)
                 if type(xs) is list
             )
         )
     )
 
-answer_choice_comments = get_config_var('Enable Answer Choice Comments [...]', False)
-answer_comments = get_config_var('Enable Answer Comments (...)', False)
-lenient_validation = get_config_var('Enable Lenient Validation', True)
-ignore_case = get_config_var('Ignore Case', True)
-ignore_separators_in_brackets = get_config_var('Ignore Separators in Brackets', True)
+class Config:
+    def __init__(self, config = None):
+        self.answer_choice_comments = get_config_var(config, 'Enable Answer Choice Comments [...]', False)
+        self.answer_comments = get_config_var(config, 'Enable Answer Comments (...)', False)
+        self.lenient_validation = get_config_var(config, 'Enable Lenient Validation', True)
+        self.ignore_case = get_config_var(config, 'Ignore Case', True)
+        self.ignore_separators_in_brackets = get_config_var(config, 'Ignore Separators in Brackets', True)
 
-ignored_characters = lowercase_if_ignore_case(get_config_var('Ignored Characters', ' .-'), ignore_case)
+        self.ignored_characters = lowercase_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case)
+        self.equivalent_strings = get_equivalent_strings_config_var(config, 'Equivalent Strings', [], self.ignore_case)
+        self.diff_lookbehind = max(1, max((len(x) for xs in self.equivalent_strings for x in xs), default=0))
 
-equivalent_strings = get_equivalent_strings_config_var('Equivalent Strings', [], ignore_case)
+        self.space_re = re.compile(r" +")
 
-diff_lookbehind = max(1, max((len(x) for xs in equivalent_strings for x in xs), default=0))
+        self.bracket_start = '(['
+        self.bracket_end = ')]'
+        self.bracket_chars = self.bracket_start + self.bracket_end
+        self.whitespace_chars = ' \t\r\n'
+        self.keep_in_alternative_chars = self.whitespace_chars + self.bracket_chars
+        self.junk_chars = self.ignored_characters.replace(' ', self.whitespace_chars) + self.bracket_chars
+        self.junk_trans = {ord(ch): None for ch in self.junk_chars}
 
-space_re = re.compile(r" +")
-
-bracket_start = '(['
-bracket_end = ')]'
-bracket_chars = bracket_start + bracket_end
-whitespace_chars = ' \t\r\n'
-keep_in_alternative_chars = whitespace_chars + bracket_chars
-junk_chars = ignored_characters.replace(' ', whitespace_chars) + bracket_chars
-junk_trans = {ord(ch): None for ch in junk_chars}
-
-allow_alternative_continue = "'-_"
+        self.allow_alternative_continue = "'-_"
