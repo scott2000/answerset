@@ -109,6 +109,19 @@ def find_alternative_jumps(correct: list[str], correct_bracket_ranges: list[tupl
 
     return jumps
 
+def ends_with(answer: list[str], end: int, to_check: list[str]) -> bool:
+    """Check if an answer prefix ends with a certain substring."""
+
+    start = end - len(to_check)
+    if start < 0:
+        return False
+
+    for i in range(0, len(to_check)):
+        if answer[start + i] != to_check[i]:
+            return False
+
+    return True
+
 @dataclass(frozen=True)
 class ErrorRange:
     __slots__ = 'correct_range', 'given_range', 'report'
@@ -126,8 +139,8 @@ class Diff:
     error_ranges: list[ErrorRange]
     current_error_range: Optional[ErrorRange]
 
-    def add_matched(self) -> 'Diff':
-        return self.replace_error(None, 1)
+    def add_matched(self, count: int = 1) -> 'Diff':
+        return self.replace_error(None, count)
 
     def add_error(self, error: ErrorRange) -> 'Diff':
         if self.current_error_range:
@@ -203,7 +216,7 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
     Find the differences between the correct answer and the given answer and
     return a list of errors. If lenient validation is enabled, don't mark
     missing bracketed text, alternative segments, or junk characters as
-    reported errors.
+    reported errors. Checks for equivalent strings while finding difference.
     """
 
     # If ignoring case, convert both to lowercase for diffing
@@ -280,6 +293,21 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
                 best_diff = best_diff_by_correct_and_prev_given_queue[-1][correct_end - 1] \
                     .add_matched() \
                     .pick_best(best_diff)
+
+            # Handle matching equivalent strings
+            if correct_char and given_char:
+                for equivalent_strings in config.equivalent_strings:
+                    for a in equivalent_strings:
+                        if not ends_with(given, given_end, a):
+                            continue
+
+                        for b in equivalent_strings:
+                            if a == b or not ends_with(correct, correct_end, b):
+                                continue
+
+                            best_diff = best_diff_by_correct_and_prev_given_queue[-len(a)][correct_end - len(b)] \
+                                .add_matched(min(len(a), len(b))) \
+                                .pick_best(best_diff)
 
             best_diff_by_correct[correct_end] = best_diff
 
