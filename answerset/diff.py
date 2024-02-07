@@ -1,3 +1,4 @@
+import collections
 from dataclasses import dataclass
 from typing import Optional
 
@@ -232,12 +233,13 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
         jumps = {}
 
     empty_diff = Diff(0, 0, [], None)
+    empty_diff_by_correct = [empty_diff for _ in range(len(correct) + 1)]
 
     # Tracks the best diff for each substring of "correct" in the current iteration
-    best_diff_by_correct = [empty_diff for _ in range(len(correct) + 1)]
+    best_diff_by_correct = empty_diff_by_correct[:]
 
     # Tracks the best diff for each substring of "correct" in the previous iteration
-    best_diff_by_correct_and_prev_given = best_diff_by_correct[:]
+    best_diff_by_correct_and_prev_given_queue = collections.deque([empty_diff_by_correct[:]], config.diff_lookbehind)
 
     # Iterate over all possible substrings of "given"
     for given_end in range(len(given) + 1):
@@ -269,22 +271,23 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
 
             # Handle "given" character wrong
             if given_char:
-                best_diff = best_diff_by_correct_and_prev_given[correct_end] \
+                best_diff = best_diff_by_correct_and_prev_given_queue[-1][correct_end] \
                     .add_error(ErrorRange((correct_end, correct_end), (given_end - 1, given_end), True)) \
                     .pick_best(best_diff)
 
             # Handle "given" character matching "correct" character
             if given_char == correct_char:
-                best_diff = best_diff_by_correct_and_prev_given[correct_end - 1] \
+                best_diff = best_diff_by_correct_and_prev_given_queue[-1][correct_end - 1] \
                     .add_matched() \
                     .pick_best(best_diff)
 
             best_diff_by_correct[correct_end] = best_diff
 
-        # Swap the lists for the next iteration, overwriting anything from the previous iteration
-        best_diff_by_correct, best_diff_by_correct_and_prev_given = best_diff_by_correct_and_prev_given, best_diff_by_correct
+        # Push the current list into a queue for later iterations
+        best_diff_by_correct_and_prev_given_queue.append(best_diff_by_correct)
+        best_diff_by_correct = empty_diff_by_correct[:]
 
     # Return the error ranges from the best diff for the whole strings
-    return best_diff_by_correct_and_prev_given[-1] \
+    return best_diff_by_correct_and_prev_given_queue[-1][-1] \
         .replace_error(None) \
         .error_ranges
