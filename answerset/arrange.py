@@ -1,4 +1,4 @@
-from . import config
+from .config import Config
 
 prefix_limit = 3
 max_similarity = 0x7fffffff
@@ -35,7 +35,7 @@ def similarity(a: str, b: str):
 
     return arr[-1]
 
-def adj_similarity(a_full: str, b_full: str):
+def adj_similarity(config: Config, a_full: str, b_full: str):
     """
     Returns the similarity between two strings adjusted to prefer matching
     prefixes and ignore junk characters.
@@ -63,9 +63,10 @@ def adj_similarity(a_full: str, b_full: str):
     return prefix_limit * similarity(a, b) + prefix
 
 class Arranger:
-    __slots__ = 'given', 'correct', 'memo', 'closest', 'assigned', 'used'
+    __slots__ = 'config', 'given', 'correct', 'memo', 'closest', 'assigned', 'used'
 
-    def __init__(self, given, correct):
+    def __init__(self, config: Config, given, correct):
+        self.config = config
         self.given = given
         self.correct = correct
         self.memo = {}
@@ -79,7 +80,7 @@ class Arranger:
         if (i, j) in self.memo:
             return self.memo[(i, j)]
 
-        s = adj_similarity(self.given[i][0], self.correct[j][0])
+        s = adj_similarity(self.config, self.given[i][0], self.correct[j][0])
         self.memo[(i, j)] = s
         return s
 
@@ -172,10 +173,10 @@ class Arranger:
 
         return parts
 
-def arrange(given, correct):
+def arrange(config: Config, given, correct):
     """Rearrange parts so that similar ones line up."""
 
-    arranger = Arranger(given, correct)
+    arranger = Arranger(config, given, correct)
     while arranger.step():
         pass
     return arranger.finalize()

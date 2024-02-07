@@ -2,13 +2,15 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-from . import config, util
+from . import util
 
-def is_alternative_stop(ch: str) -> bool:
+from .config import Config
+
+def is_alternative_stop(config: Config, ch: str) -> bool:
     """Check if a character should stop an alternative outside of brackets."""
     return not ch.isalnum() and ch not in config.allow_alternative_continue
 
-def find_alternative_jumps(correct: list[str], correct_bracket_ranges: list[tuple[int, int]]) -> dict[int, list[int]]:
+def find_alternative_jumps(config: Config, correct: list[str], correct_bracket_ranges: list[tuple[int, int]]) -> dict[int, list[int]]:
     """
     Find out which parts of the correct answer are allowed to be missing since
     they are part of an alternative. Returns a dictionary mapping from end
@@ -33,7 +35,7 @@ def find_alternative_jumps(correct: list[str], correct_bracket_ranges: list[tupl
         def stop(i: int) -> bool:
             ch = correct[i]
 
-            if not is_alternative_stop(ch):
+            if not is_alternative_stop(config, ch):
                 return False
 
             return not allow_spaces_in_brackets \
@@ -211,7 +213,7 @@ class Diff:
         # It's better to already have a reporting error range since it could expand
         return self.current_error_range.report and not other.current_error_range.report
 
-def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
+def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRange]:
     """
     Find the differences between the correct answer and the given answer and
     return a list of errors. If lenient validation is enabled, don't mark
@@ -235,7 +237,7 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
     if config.lenient_validation:
         correct_bracket_ranges = util.find_bracket_ranges(correct, lenient=True, nested=True)
 
-        jumps: dict[int, list[int]] = find_alternative_jumps(correct, correct_bracket_ranges)
+        jumps: dict[int, list[int]] = find_alternative_jumps(config, correct, correct_bracket_ranges)
         for start, end in correct_bracket_ranges:
             jumps.setdefault(end, []).append(start)
 
@@ -269,7 +271,7 @@ def diff(correct: list[str], given: list[str]) -> list[ErrorRange]:
             best_diff: Optional[Diff] = None
 
             if correct_char:
-                report_missing = not config.lenient_validation or not util.is_junk(correct_char)
+                report_missing = not config.lenient_validation or not util.is_junk(config, correct_char)
 
                 # Handle "correct" character missing
                 best_diff = best_diff_by_correct[correct_end - 1] \

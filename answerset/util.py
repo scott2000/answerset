@@ -1,8 +1,8 @@
 from typing import Iterator
 
-from . import config
+from .config import Config
 
-def is_junk(ch: str):
+def is_junk(config: Config, ch: str):
     return len(ch) == 1 and ord(ch) in config.junk_trans
 
 def find_bracket_ranges(input: Iterator[str], lenient: bool = False, nested: bool = False) -> list[tuple[int, int]]:

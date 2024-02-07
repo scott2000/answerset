@@ -1,9 +1,10 @@
 import html
 import unicodedata as ucd
 
-from . import config, util
+from . import util
 
 from .arrange import arrange
+from .config import Config
 from .diff import diff
 from .group import group_combining
 
@@ -53,7 +54,7 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     return string, ''
 
-def split_options(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
+def split_options(config: Config, string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
@@ -79,7 +80,7 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>" if s else ''
 
-def render_diffs(given, correct, given_elems, correct_elems):
+def render_diffs(config: Config, given, correct, given_elems, correct_elems):
     """Create the diff comparison strings for each part."""
 
     # Separate comments from parts
@@ -103,7 +104,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
     correct_index = 0
 
     # Iterate through errors to render the diff
-    for error in diff(correct, given):
+    for error in diff(config, correct, given):
         given_start, given_end = error.given_range
         correct_start, correct_end = error.correct_range
 
@@ -137,7 +138,7 @@ def render_diffs(given, correct, given_elems, correct_elems):
     # Return whether there was any error or not
     return has_error
 
-def compare_answer_no_html(correct: str, given: str) -> str:
+def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
 
     # Replace consecutive spaces with a single space
@@ -172,28 +173,27 @@ def compare_answer_no_html(correct: str, given: str) -> str:
         sep = ','
 
     # Split on the separator
-    correct = split_options(correct, sep, correct_bracket_ranges)
-    given = split_options(given, sep, given_bracket_ranges)
+    correct = split_options(config, correct, sep, correct_bracket_ranges)
+    given = split_options(config, given, sep, given_bracket_ranges)
 
     # Arrange the parts so that similar ones line up and render the diffs
     has_error = False
     given_elems = []
     correct_elems = []
-    for given, correct in arrange(given, correct):
+    for given, correct in arrange(config, given, correct):
         if not given:
             correct_elems.append(missed(correct[0]) + correct[1])
         elif not correct:
             has_error = True
             given_elems.append(bad(''.join(given)))
         else:
-            has_error |= render_diffs(given, correct, given_elems, correct_elems)
+            has_error |= render_diffs(config, given, correct, given_elems, correct_elems)
 
     # Diff comments if they were given
     if given_comment:
         given = given_comment.strip()
         correct = correct_comment.strip()
-        has_error |= render_diffs(
-                (given, ''), (correct, ''), given_elems, correct_elems)
+        has_error |= render_diffs(config, (given, ''), (correct, ''), given_elems, correct_elems)
 
     sep = not_code(html.escape(sep) + ' ')
     res = '<div><code id=typeans>'

@@ -1,11 +1,15 @@
 from answerset.arrange import arrange
+from answerset.config import Config
+
+test_config = Config()
 
 def test_arrange_empty():
-    result = arrange([], [])
+    result = arrange(test_config, [], [])
     assert result == []
 
 def test_arrange_given_empty():
     result = arrange(
+        test_config,
         [],
         [('abc', '')],
     )
@@ -16,6 +20,7 @@ def test_arrange_given_empty():
 
 def test_arrange_correct_empty():
     result = arrange(
+        test_config,
         [('abc', '')],
         [],
     )
@@ -26,6 +31,7 @@ def test_arrange_correct_empty():
 
 def test_arrange_one():
     result = arrange(
+        test_config,
         [('abc', '')],
         [('abc', '')],
     )
@@ -36,6 +42,7 @@ def test_arrange_one():
 
 def test_arrange_two():
     result = arrange(
+        test_config,
         [('abc', ''), ('def', '')],
         [('abc', ''), ('def', '')],
     )
@@ -47,6 +54,7 @@ def test_arrange_two():
 
 def test_arrange_swap():
     result = arrange(
+        test_config,
         [('def', ' [def given]'), ('abc', ' [abc given]')],
         [('abc', ' [abc correct]'), ('def', ' [def correct]')],
     )
@@ -58,6 +66,7 @@ def test_arrange_swap():
 
 def test_arrange_missing():
     result = arrange(
+        test_config,
         [('def', '')],
         [('abc', ''), ('def', '')],
     )
@@ -69,6 +78,7 @@ def test_arrange_missing():
 
 def test_arrange_extra():
     result = arrange(
+        test_config,
         [('abc', ''), ('def', '')],
         [('def', '')],
     )
@@ -80,6 +90,7 @@ def test_arrange_extra():
 
 def test_arrange_with_mistake_1():
     result = arrange(
+        test_config,
         [('deff', '')],
         [('abc', ''), ('def', '')],
     )
@@ -91,6 +102,7 @@ def test_arrange_with_mistake_1():
 
 def test_arrange_with_mistake_2():
     result = arrange(
+        test_config,
         [('eff', ''), ('ab', '')],
         [('abc', ''), ('def', '')],
     )
@@ -102,6 +114,7 @@ def test_arrange_with_mistake_2():
 
 def test_arrange_with_mistake_3():
     result = arrange(
+        test_config,
         [('def', ''), ('cab', '')],
         [('abc', '')],
     )
@@ -113,6 +126,7 @@ def test_arrange_with_mistake_3():
 
 def test_arrange_with_mistake_3():
     result = arrange(
+        test_config,
         [('fat', ''), ('house', ''), ('horse', ''), ('cot', '')],
         [('dog', ''), ('cat', ''), ('mouse', '')],
     )
@@ -126,6 +140,7 @@ def test_arrange_with_mistake_3():
 
 def test_arrange_with_mistake_4():
     result = arrange(
+        test_config,
         [('some answer', '')],
         [('some answer (but with a super long comment that is technically wrong but should not be penalized)', ''), ('other answer', '')],
     )
@@ -137,6 +152,7 @@ def test_arrange_with_mistake_4():
 
 def test_arrange_with_mistake_5():
     result = arrange(
+        test_config,
         [('mouse', ''), ('cow', '')],
         [('dog', ''), ('cat', ''), ('mouse', ' [animal]')],
     )
@@ -149,6 +165,7 @@ def test_arrange_with_mistake_5():
 
 def test_arrange_with_junk():
     result = arrange(
+        test_config,
         [('some ------------------- answer', '')],
         [('------------------- answer', ''), ('some answer', '')],
     )
@@ -160,6 +177,7 @@ def test_arrange_with_junk():
 
 def test_arrange_with_only_junk():
     result = arrange(
+        test_config,
         [('.-', '')],
         [('---', ''), ('-.-', ''), ('...', '')],
     )
