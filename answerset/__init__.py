@@ -26,7 +26,7 @@ from .config import Config
 def get_config() -> Config:
     try:
         import aqt
-        return Config(aqt.mw.addonManager.getConfig(__name__))
+        return Config(aqt.mw.addonManager.getConfig(__name__) if aqt.mw else None)
     except:
         return Config()
 
@@ -40,7 +40,7 @@ try:
     def correct(self, given: str, correct: str, **kwargs) -> str:
         return compare_answer_no_html(user_config, correct, given)
 
-    Reviewer.correct = correct
+    Reviewer.correct = correct # type: ignore
 except:
     pass
 
@@ -50,18 +50,19 @@ try:
     from anki.collection import Collection
     from anki.utils import html_to_text_line
 
-    def compare_answer(self, correct: str, given: str) -> str:
+    def compare_answer(self: Collection, expected: str, provided: str) -> str:
         # Strip AV tags if possible
         try:
-            correct = aqt.mw.col.media.strip_av_tags(correct)
+            if aqt.mw:
+                expected = aqt.mw.col.media.strip_av_tags(expected)
         except:
             pass
 
         # Strip HTML tags
-        correct = html_to_text_line(correct)
+        expected = html_to_text_line(expected)
 
-        return compare_answer_no_html(user_config, correct, given)
+        return compare_answer_no_html(user_config, expected, provided)
 
-    Collection.compare_answer = compare_answer
+    Collection.compare_answer = compare_answer # type: ignore
 except:
     pass

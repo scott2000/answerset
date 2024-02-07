@@ -1,8 +1,11 @@
 import re
+from typing import Any, TypeVar
 
 from .group import group_combining
 
-def get_config_var(config, var_name: str, default_value):
+T = TypeVar('T')
+
+def get_config_var(config: Any, var_name: str, default_value: T) -> T:
     try:
         value = config[var_name]
     except:
@@ -16,7 +19,7 @@ def get_config_var(config, var_name: str, default_value):
 def lowercase_if_ignore_case(s: str, ignore_case: bool) -> str:
     return s.lower() if ignore_case else s
 
-def get_equivalent_strings_config_var(config, var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
+def get_equivalent_strings_config_var(config: Any, var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
     return list(
         filter(
             lambda xs: len(xs) >= 2,
@@ -36,7 +39,7 @@ def get_equivalent_strings_config_var(config, var_name: str, default_value: list
     )
 
 class Config:
-    def __init__(self, config = None):
+    def __init__(self, config: Any = None):
         self.answer_choice_comments = get_config_var(config, 'Enable Answer Choice Comments [...]', False)
         self.answer_comments = get_config_var(config, 'Enable Answer Comments (...)', False)
         self.lenient_validation = get_config_var(config, 'Enable Lenient Validation', True)

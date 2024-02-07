@@ -124,7 +124,7 @@ def test_arrange_with_mistake_3():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_3():
+def test_arrange_with_mistake_4():
     result = arrange(
         test_config,
         [('fat', ''), ('house', ''), ('horse', ''), ('cot', '')],
@@ -138,7 +138,7 @@ def test_arrange_with_mistake_3():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_4():
+def test_arrange_with_mistake_5():
     result = arrange(
         test_config,
         [('some answer', '')],
@@ -150,7 +150,7 @@ def test_arrange_with_mistake_4():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_5():
+def test_arrange_with_mistake_6():
     result = arrange(
         test_config,
         [('mouse', ''), ('cow', '')],
