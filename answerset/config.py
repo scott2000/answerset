@@ -51,6 +51,8 @@ ignored_characters = lowercase_if_ignore_case(get_config_var('Ignored Characters
 
 equivalent_strings = get_equivalent_strings_config_var('Equivalent Strings', [], ignore_case)
 
+diff_lookbehind = max(1, max((len(x) for xs in equivalent_strings for x in xs), default=0))
+
 space_re = re.compile(r" +")
 
 bracket_start = '(['
