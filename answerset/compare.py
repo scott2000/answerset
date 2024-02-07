@@ -3,7 +3,7 @@ import unicodedata as ucd
 
 from . import util
 
-from .arrange import arrange
+from .arrange import Choice, arrange
 from .config import Config
 from .diff import diff
 from .group import group_combining
@@ -80,21 +80,21 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code id=typeans>" if s else ''
 
-def render_diffs(config: Config, given, correct, given_elems, correct_elems):
+def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]):
     """Create the diff comparison strings for each part."""
 
     # Separate comments from parts
-    given, given_comment = given
-    correct, correct_comment = correct
+    given_str, given_comment = given_choice
+    correct_str, correct_comment = correct_choice
 
     # Only diff comments if they were given
     if given_comment:
-        given += given_comment
-        correct += correct_comment
+        given_str += given_comment
+        correct_str += correct_comment
 
     # Group combining characters to give cleaner diffs
-    given = group_combining(given)
-    correct = group_combining(correct)
+    given = group_combining(given_str)
+    correct = group_combining(correct_str)
 
     has_error = False
     given_elem = ''
@@ -160,11 +160,11 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
 
     # Find bracket ranges in both answers (if config option enabled)
     if config.ignore_separators_in_brackets:
-        correct_bracket_ranges = util.find_bracket_ranges(correct)
         given_bracket_ranges = util.find_bracket_ranges(given)
+        correct_bracket_ranges = util.find_bracket_ranges(correct)
     else:
-        correct_bracket_ranges = []
         given_bracket_ranges = []
+        correct_bracket_ranges = []
 
     # Pick separator as ';' if one is used, otherwise ','
     if util.has_separator(correct, ';', correct_bracket_ranges):
@@ -173,21 +173,21 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         sep = ','
 
     # Split on the separator
-    correct = split_options(config, correct, sep, correct_bracket_ranges)
-    given = split_options(config, given, sep, given_bracket_ranges)
+    given_split = split_options(config, given, sep, given_bracket_ranges)
+    correct_split = split_options(config, correct, sep, correct_bracket_ranges)
 
     # Arrange the parts so that similar ones line up and render the diffs
-    has_error = False
-    given_elems = []
-    correct_elems = []
-    for given, correct in arrange(config, given, correct):
-        if not given:
-            correct_elems.append(missed(correct[0]) + correct[1])
-        elif not correct:
+    has_error: bool = False
+    given_elems: list[str] = []
+    correct_elems: list[str] = []
+    for given_choice, correct_choice in arrange(config, given_split, correct_split):
+        if given_choice and correct_choice:
+            has_error |= render_diffs(config, given_choice, correct_choice, given_elems, correct_elems)
+        elif correct_choice:
+            correct_elems.append(missed(correct_choice[0]) + correct_choice[1])
+        elif given_choice:
             has_error = True
-            given_elems.append(bad(''.join(given)))
-        else:
-            has_error |= render_diffs(config, given, correct, given_elems, correct_elems)
+            given_elems.append(bad(''.join(given_choice)))
 
     # Diff comments if they were given
     if given_comment:

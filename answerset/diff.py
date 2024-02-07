@@ -20,8 +20,6 @@ def find_alternative_jumps(config: Config, correct: list[str], correct_bracket_r
     if '/' not in correct:
         return {}
 
-    jumps: list[list[int]] = [[] for _ in range(len(correct))]
-
     bracket_jumps: dict[int, int] = {(end - 1): start for start, end in correct_bracket_ranges}
     bracket_starts: set[int] = {start for start, _ in correct_bracket_ranges}
 
@@ -89,15 +87,15 @@ def find_alternative_jumps(config: Config, correct: list[str], correct_bracket_r
 
         # Using the info in first_alpha and first_slash, find the valid jumps
         for i in range(len(correct) + 1):
-            ch = correct[i] if i < len(correct) else None
+            curr_ch = correct[i] if i < len(correct) else None
 
             prev_slash = first_slash[i - 1] if i > 0 else None
-            if prev_slash is not None and prev_slash != i - 1 and (ch is None or stop(i)):
+            if prev_slash is not None and prev_slash != i - 1 and (curr_ch is None or stop(i)):
                 current = jumps.setdefault(i, [])
                 if prev_slash not in current:
                     current.append(prev_slash)
 
-            if ch == '/' and i < len(correct) - 1 and ((i + 1) in bracket_starts or not stop(i + 1)):
+            if curr_ch == '/' and i < len(correct) - 1 and ((i + 1) in bracket_starts or not stop(i + 1)):
                 prev_alpha = first_alpha[i - 1] if i > 0 else None
                 if prev_alpha is not None:
                     current = jumps.setdefault(i + 1, [])
@@ -311,7 +309,8 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
                                 .add_matched(min(len(a), len(b))) \
                                 .pick_best(best_diff)
 
-            best_diff_by_correct[correct_end] = best_diff
+            if best_diff:
+                best_diff_by_correct[correct_end] = best_diff
 
         # Push the current list into a queue for later iterations
         best_diff_by_correct_and_prev_given_queue.append(best_diff_by_correct)

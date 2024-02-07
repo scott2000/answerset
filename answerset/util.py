@@ -1,11 +1,11 @@
-from typing import Iterator
+from collections.abc import Iterable
 
 from .config import Config
 
-def is_junk(config: Config, ch: str):
+def is_junk(config: Config, ch: str) -> bool:
     return len(ch) == 1 and ord(ch) in config.junk_trans
 
-def find_bracket_ranges(input: Iterator[str], lenient: bool = False, nested: bool = False) -> list[tuple[int, int]]:
+def find_bracket_ranges(input: Iterable[str], lenient: bool = False, nested: bool = False) -> list[tuple[int, int]]:
     found_ranges = []
     expected_ends = []
     for i, ch in enumerate(input):
@@ -36,7 +36,7 @@ def find_bracket_ranges(input: Iterator[str], lenient: bool = False, nested: boo
 def index_in_any_range(index: int, ranges: list[tuple[int, int]]) -> bool:
     return any(start <= index < end for start, end in ranges)
 
-def find_indices(haystack: str, needle: str, ranges: list[tuple[int, int]]) -> Iterator[int]:
+def find_indices(haystack: str, needle: str, ranges: list[tuple[int, int]]) -> Iterable[int]:
     return (i for i, ch in enumerate(haystack) if ch == needle and not index_in_any_range(i, ranges))
 
 def has_separator(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> bool:

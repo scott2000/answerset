@@ -1,9 +1,11 @@
+from typing import Optional
+
 from .config import Config
 
 prefix_limit = 3
 max_similarity = 0x7fffffff
 
-def similarity(a: str, b: str):
+def similarity(a: str, b: str) -> int:
     """
     Returns the length of the longest common subsequence between two strings suffixes.
     """
@@ -35,7 +37,7 @@ def similarity(a: str, b: str):
 
     return arr[-1]
 
-def adj_similarity(config: Config, a_full: str, b_full: str):
+def adj_similarity(config: Config, a_full: str, b_full: str) -> int:
     """
     Returns the similarity between two strings adjusted to prefer matching
     prefixes and ignore junk characters.
@@ -62,19 +64,25 @@ def adj_similarity(config: Config, a_full: str, b_full: str):
     # Return similarity adjusted for prefix length
     return prefix_limit * similarity(a, b) + prefix
 
+# Answer choice and comment tuple
+Choice = tuple[str, str]
+
+# Pairing of given and correct answer choices
+ChoicePair = tuple[Optional[Choice], Optional[Choice]]
+
 class Arranger:
     __slots__ = 'config', 'given', 'correct', 'memo', 'closest', 'assigned', 'used'
 
-    def __init__(self, config: Config, given, correct):
+    def __init__(self, config: Config, given: list[Choice], correct: list[Choice]):
         self.config = config
         self.given = given
         self.correct = correct
-        self.memo = {}
-        self.closest = {}
-        self.assigned = {}
-        self.used = set()
+        self.memo: dict[tuple[int, int], int] = {}
+        self.closest: dict[int, int] = {}
+        self.assigned: dict[int, int] = {}
+        self.used: set[int] = set()
 
-    def get_similarity(self, i, j):
+    def get_similarity(self, i: int, j: int) -> int:
         """Find the similarity between a "given" part and a "correct" part."""
 
         if (i, j) in self.memo:
@@ -84,7 +92,7 @@ class Arranger:
         self.memo[(i, j)] = s
         return s
 
-    def max_for(self, i):
+    def max_for(self, i: int) -> int:
         """
         Compute the maximum similarity for a specific "given" part to the nearest
         matching "correct" part.
@@ -113,10 +121,11 @@ class Arranger:
                     break
 
         # Remember the closest value and return the similarity
-        self.closest[i] = closest
+        if closest is not None:
+            self.closest[i] = closest
         return closest_similarity
 
-    def step(self):
+    def step(self) -> bool:
         """
         Make an assignment for the most similar pair. Returns True if more
         steps are needed and False otherwise.
@@ -149,17 +158,20 @@ class Arranger:
                     break
 
         # Record the assignment
+        if closest is None:
+            return False
+
         target = self.closest[closest]
         self.assigned[closest] = target
         self.used.add(target)
 
         return True
 
-    def finalize(self):
+    def finalize(self) -> list[ChoicePair]:
         """Create a list of parts which should be compared."""
 
         # Put "given" parts and their matching "correct" parts first
-        parts = []
+        parts: list[ChoicePair] = []
         for i in range(len(self.given)):
             if i in self.assigned:
                 parts.append((self.given[i], self.correct[self.assigned[i]]))
@@ -173,10 +185,11 @@ class Arranger:
 
         return parts
 
-def arrange(config: Config, given, correct):
+def arrange(config: Config, given: list[Choice], correct: list[Choice]) -> list[ChoicePair]:
     """Rearrange parts so that similar ones line up."""
 
     arranger = Arranger(config, given, correct)
     while arranger.step():
         pass
+
     return arranger.finalize()
