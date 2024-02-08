@@ -57,6 +57,11 @@ config in Anki:
 * [Lenient Validation](doc/lenient_validation.md) *(Enabled by default)*
 * [Comments](doc/comments.md) *(Disabled by default)*
 
+Additionally, there is an "Equivalent Strings" config option to treat certain
+words as equivalent when checking answers. For instance, you may want to treat
+"I am" and "I'm" as being the same. To see all available options, open the
+add-on config page in Anki.
+
 ## Implementation Details
 
 This add-on is implemented as a monkey patch replacing
@@ -80,6 +85,10 @@ validation", where brackets, text separated by slashes, and certain other
 characters are allowed to be missing from the given answer.
 
 ## Changelog
+
+2024-02-08:
+
+* Added config option to treat certain strings as the same when comparing answers.
 
 2024-01-21:
 
