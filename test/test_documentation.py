@@ -45,6 +45,18 @@ def test_doc_lenient_validation_missing_alternative():
     result = compare_answer_no_html(test_config, correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>set in </span><span class=typeMissed>one&#x27;s/</span><span class=typeGood>my ways</span></code></div>'
 
+def test_doc_lenient_validation_missing_alternative_with_spaces():
+    correct = "we've got [a lot of/plenty of] time"
+    given = "we've got a lot of time"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>we&#x27;ve got </span><span class=typeMissed>[</span><span class=typeGood>a lot of</span><span class=typeMissed>/plenty of]</span><span class=typeGood> time</span></code></div>'
+
+def test_doc_lenient_validation_missing_alternative_bracket():
+    correct = "we've got [a lot of/plenty of] time"
+    given = "we've got time"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>we&#x27;ve got </span><span class=typeMissed>[a lot of/plenty of] </span><span class=typeGood>time</span></code></div>'
+
 def test_doc_answer_choice_comments():
     correct = 'dog, cat, mouse [animal]'
     given = 'mouse, cow'
