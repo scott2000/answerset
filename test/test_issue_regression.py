@@ -9,6 +9,19 @@ def test_issue_2_alternative():
     result = compare_answer_no_html(test_config, correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>be set in </span><span class=typeMissed>one&#x27;s/</span><span class=typeGood>my ways</span></code></div>'
 
+def test_issue_2_equivalent_strings():
+    correct = "keep one's eye on somebody"
+    given = 'keep ones eye on sb'
+    config = Config({
+        "Enable Lenient Validation": False,
+        "Equivalent Strings": [
+            ["one's", "ones"],
+            ["sb", "somebody"]
+        ],
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>keep one&#x27;s eye on somebody</span></code></div>'
+
 def test_issue_2_alternative_in_brackets_first():
     correct = "There's no need to hurry - we've got [a lot of/plenty of] time."
     given = "There's no need to hurry - we've got a lot of time."
@@ -230,3 +243,14 @@ def test_issue_18_parentheses_in_alternative_6():
     given = 'getting'
     result = compare_answer_no_html(test_config, correct, given)
     assert result == '<div><code id=typeans><span class=typeGood>get</span><span class=typeMissed>(s/</span><span class=typeGood>ting</span><span class=typeMissed>) (x)</span></code></div>'
+
+def test_issue_23_equivalent_strings():
+    correct = 'I am happy.'
+    given = "I'm happy"
+    config = Config({
+        "Equivalent Strings": [
+            ["I'm", "I am"]
+        ],
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div><code id=typeans><span class=typeGood>I am happy</span><span class=typeMissed>.</span></code></div>'

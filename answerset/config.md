@@ -41,7 +41,8 @@ not be marked as an error.
 This option is an array of arrays of strings which should be considered to be
 equivalent to each other when checking answers. These strings may contain
 special characters such as spaces or apostrophes, but be careful to follow the
-correct JSON format. To disable this option, leave it empty (like `[]`).
+correct [JSON format](https://en.wikipedia.org/wiki/JSON) for arrays and
+strings. To disable this option, leave it empty (like `[]`).
 
 Example: `[["I am", "I'm", "Im"], ["'re", " are"]]`
 
