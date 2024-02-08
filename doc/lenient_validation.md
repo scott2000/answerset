@@ -42,3 +42,14 @@ incorrect.
 For example, if you type "set in my ways" for `set in one's/my ways`, it shows:
 
 ![Missing alternative](../img/missing_alternative.png)
+
+Spaces are only allowed in alternatives if the entire set of alternatives is
+surrounded by square brackets `[...]` or parentheses `(...)`, but note that
+this also makes it optional. For example, if have a card with
+`we've got [a lot of/plenty of] time`, you can type "we've got a lot of time":
+
+![Missing alternative with spaces](../img/missing_alternative_with_spaces.png)
+
+But you could also type just "we've got time":
+
+![Missing all alternatives in bracket](../img/missing_alternative_bracket.png)
