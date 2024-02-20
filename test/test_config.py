@@ -40,6 +40,17 @@ def test_equivalent_strings_ignore_case():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
+def test_equivalent_strings_ignore_case_unicode():
+    correct = 'xß'
+    given = 'y'
+    config = Config({
+        "Equivalent Strings": [
+            ["xß", "y"],
+        ],
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
 def test_equivalent_strings_no_ignore_case():
     correct = 'dog and moose'
     given = 'CAT and MOUSE'
@@ -79,6 +90,13 @@ def test_equivalent_strings_normalization_2():
 def test_ignore_case():
     correct = 'I saw him'
     given = 'i saw Him'
+    config = Config()
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_ignore_case_unicode():
+    correct = 'xßy'
+    given = 'xssy'
     config = Config()
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
