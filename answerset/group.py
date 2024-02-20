@@ -26,3 +26,10 @@ def group_combining(string: str) -> list[str]:
         parts.append(current)
 
     return parts
+
+def has_multiple_chars(string: str) -> bool:
+    for i in range(1, len(string)):
+        if not is_combining(string[i]):
+            return True
+
+    return False

@@ -17,17 +17,19 @@ def get_config_var(config: Any, var_name: str, default_value: T) -> T:
 
     return value
 
-def lowercase_if_ignore_case(s: str, ignore_case: bool) -> str:
-    return s.lower() if ignore_case else s
+def casefold_if_ignore_case(s: str, ignore_case: bool) -> str:
+    return s.casefold() if ignore_case else s
 
 def get_equivalent_strings_config_var(config: Any, var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
+    # BUG: if there is an equivalence ["ß", "x"] and the answer is "ss", then "x" is not accepted
+    # TODO: consider grouping combining characters after finding diff instead to resolve this bug
     return list(
         filter(
             lambda xs: len(xs) >= 2,
             (
                 [
                     [
-                        lowercase_if_ignore_case(ch, ignore_case)
+                        casefold_if_ignore_case(ch, ignore_case)
                         for ch in group_combining(ucd.normalize('NFC', x))
                     ]
                     for x in xs
@@ -47,9 +49,8 @@ class Config:
         self.ignore_case = get_config_var(config, 'Ignore Case', True)
         self.ignore_separators_in_brackets = get_config_var(config, 'Ignore Separators in Brackets', True)
 
-        self.ignored_characters = ucd.normalize('NFC', lowercase_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case))
+        self.ignored_characters = ucd.normalize('NFC', casefold_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case))
         self.equivalent_strings = get_equivalent_strings_config_var(config, 'Equivalent Strings', [], self.ignore_case)
-        self.diff_lookbehind = max(1, max((len(x) for xs in self.equivalent_strings for x in xs), default=0))
 
         self.space_re = re.compile(r" +")
 

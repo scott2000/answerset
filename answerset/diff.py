@@ -5,6 +5,7 @@ from typing import Optional
 from . import util
 
 from .config import Config
+from .group import group_combining, has_multiple_chars
 
 def is_alternative_stop(config: Config, ch: str) -> bool:
     """Check if a character should stop an alternative outside of brackets."""
@@ -211,6 +212,14 @@ class Diff:
         # It's better to already have a reporting error range since it could expand
         return self.current_error_range.report and not other.current_error_range.report
 
+def casefold_and_record_split_strings(ch: str, split_strings: dict[str, list[str]]) -> str:
+    new_ch = ch.casefold()
+
+    if new_ch not in split_strings and has_multiple_chars(new_ch):
+        split_strings[new_ch] = group_combining(new_ch)
+
+    return new_ch
+
 def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRange]:
     """
     Find the differences between the correct answer and the given answer and
@@ -219,10 +228,22 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
     reported errors. Checks for equivalent strings while finding difference.
     """
 
-    # If ignoring case, convert both to lowercase for diffing
+    # There may be more equivalent strings added after case folding
+    all_equivalent_strings = config.equivalent_strings
+
+    # If ignoring case, apply Unicode case folding to both
     if config.ignore_case:
-        correct = list(map(lambda ch: ch.lower(), correct))
-        given = list(map(lambda ch: ch.lower(), given))
+        split_strings: dict[str, list[str]] = {}
+
+        correct = list(map(lambda ch: casefold_and_record_split_strings(ch, split_strings), correct))
+        given = list(map(lambda ch: casefold_and_record_split_strings(ch, split_strings), given))
+
+        # Record any new equivalences caused by case folding in correct or given
+        # Example: ['ß'] expands to ['ss'], but ['s', 's'] is equivalent
+        if split_strings:
+            all_equivalent_strings = all_equivalent_strings[:]
+            for new_ch in split_strings:
+                all_equivalent_strings.append([[new_ch], split_strings[new_ch]])
 
     if correct == given:
         return []
@@ -251,8 +272,11 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
     # Tracks the best diff for each substring of "correct" in the current iteration
     best_diff_by_correct = empty_diff_by_correct[:]
 
-    # Tracks the best diff for each substring of "correct" in the previous iteration
-    best_diff_by_correct_and_prev_given_queue = collections.deque([empty_diff_by_correct[:]], config.diff_lookbehind)
+    # Calculate the number of previous iterations to keep (min: 1)
+    diff_lookbehind = max(1, max((len(x) for xs in all_equivalent_strings for x in xs), default=0))
+
+    # Tracks the best diff for each substring of "correct" in previous iterations
+    best_diff_by_correct_and_prev_given_queue = collections.deque([empty_diff_by_correct[:]], diff_lookbehind)
 
     # Iterate over all possible substrings of "given"
     for given_end in range(len(given) + 1):
@@ -296,7 +320,7 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
 
             # Handle matching equivalent strings
             if correct_char and given_char:
-                for equivalent_strings in config.equivalent_strings:
+                for equivalent_strings in all_equivalent_strings:
                     for a in equivalent_strings:
                         if not ends_with(given, given_end, a):
                             continue
