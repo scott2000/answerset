@@ -1,4 +1,5 @@
 import re
+import unicodedata as ucd
 from typing import Any, TypeVar
 
 from .group import group_combining
@@ -27,7 +28,7 @@ def get_equivalent_strings_config_var(config: Any, var_name: str, default_value:
                 [
                     [
                         lowercase_if_ignore_case(ch, ignore_case)
-                        for ch in group_combining(x)
+                        for ch in group_combining(ucd.normalize('NFC', x))
                     ]
                     for x in xs
                     if x and type(x) is str
@@ -46,7 +47,7 @@ class Config:
         self.ignore_case = get_config_var(config, 'Ignore Case', True)
         self.ignore_separators_in_brackets = get_config_var(config, 'Ignore Separators in Brackets', True)
 
-        self.ignored_characters = lowercase_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case)
+        self.ignored_characters = ucd.normalize('NFC', lowercase_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case))
         self.equivalent_strings = get_equivalent_strings_config_var(config, 'Equivalent Strings', [], self.ignore_case)
         self.diff_lookbehind = max(1, max((len(x) for xs in self.equivalent_strings for x in xs), default=0))
 
