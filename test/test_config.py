@@ -53,6 +53,29 @@ def test_equivalent_strings_no_ignore_case():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
+def test_equivalent_strings_normalization_1():
+    correct = '\u212B'
+    given = 'A'
+    config = Config({
+        "Equivalent Strings": [
+            ["A", "A\u030A"]
+        ],
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_equivalent_strings_normalization_2():
+    correct = 'A\u030A'
+    given = 'A'
+    config = Config({
+        "Equivalent Strings": [
+            ["A", "\u212B"]
+        ],
+        "Ignore Case": False,
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
 def test_ignore_case():
     correct = 'I saw him'
     given = 'i saw Him'
@@ -93,3 +116,22 @@ def test_missing_space_not_ignored():
     })
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
+
+def test_ignored_characters_normalization_1():
+    correct = 'test \u212B'
+    given = 'test'
+    config = Config({
+        "Ignored Characters": "A\u030A ",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_ignored_characters_normalization_2():
+    correct = 'test A\u030A'
+    given = 'test'
+    config = Config({
+        "Ignore Case": False,
+        "Ignored Characters": "\u212B ",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result

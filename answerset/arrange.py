@@ -157,10 +157,10 @@ class Arranger:
                 if s == max_similarity:
                     break
 
-        # Record the assignment
         if closest is None:
             return False
 
+        # Record the assignment
         target = self.closest[closest]
         self.assigned[closest] = target
         self.used.add(target)
