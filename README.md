@@ -24,6 +24,13 @@ before showing the difference, and so only this would be shown:
 This is particularly useful for language learning, since often there will be
 multiple words matching a definition or multiple definitions for the same word.
 
+## Lenient Validation
+
+This add-on also makes it possible to mark certain words in an answer as
+optional by putting them in parentheses or square brackets, or to accept any
+one of a set of words within an answer by separating them with slashes.
+[See here](doc/lenient_validation.md) for more details.
+
 ## Improved Support for Indic Scripts
 
 For some languages such as Tamil (தமிழ்), the script requires combining
@@ -85,6 +92,11 @@ validation", where brackets, text separated by slashes, and certain other
 characters are allowed to be missing from the given answer.
 
 ## Changelog
+
+2024-02-20:
+
+* Use Unicode case folding for case-insensitive matching.
+* Fixed Unicode normalization in config options.
 
 2024-02-08:
 
