@@ -12,6 +12,9 @@ def get_config_var(config: Any, var_name: str, default_value: T) -> T:
     except:
         return default_value
 
+    if type(value) is int and type(default_value) is float:
+        value = float(value)
+
     if type(value) is not type(default_value):
         return default_value
 
@@ -48,6 +51,7 @@ class Config:
         self.lenient_validation = get_config_var(config, 'Enable Lenient Validation', True)
         self.ignore_case = get_config_var(config, 'Ignore Case', True)
         self.ignore_separators_in_brackets = get_config_var(config, 'Ignore Separators in Brackets', True)
+        self.numeric_comparison_factor = get_config_var(config, 'Numeric Comparison Factor', 0.0)
 
         self.ignored_characters = ucd.normalize('NFC', casefold_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case))
         self.equivalent_strings = get_equivalent_strings_config_var(config, 'Equivalent Strings', [], self.ignore_case)
