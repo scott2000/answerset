@@ -78,7 +78,7 @@ def missed(s: str) -> str:
     return f"<span class=typeMissed>{html.escape(s)}</span>" if s else ''
 
 def not_code(s: str) -> str:
-    return f"</code>{s}<code id=typeans>" if s else ''
+    return f"</code>{s}<code>" if s else ''
 
 def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]):
     """Create the diff comparison strings for each part."""
@@ -196,7 +196,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         has_error |= render_diffs(config, (given, ''), (correct, ''), given_elems, correct_elems)
 
     sep = not_code(html.escape(sep) + ' ')
-    res = '<div><code id=typeans>'
+    res = '<div id=typeans><code>'
 
     # Only show the given part if there was an error
     if has_error:
