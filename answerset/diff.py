@@ -1,11 +1,13 @@
 import collections
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 from . import util
 
 from .config import Config
 from .group import group_combining, has_multiple_chars
+from .numeric import find_numeric_ranges_by_end_index
 
 def is_alternative_stop(config: Config, ch: str) -> bool:
     """Check if a character should stop an alternative outside of brackets."""
@@ -123,13 +125,19 @@ def ends_with(answer: list[str], end: int, to_check: list[str]) -> bool:
 
     return True
 
+class ErrorKind(Enum):
+    REGULAR = 0
+    MINOR = 1
+    SKIP = 2
+
 @dataclass(frozen=True)
 class ErrorRange:
-    __slots__ = 'correct_range', 'given_range', 'report'
+    __slots__ = 'correct_range', 'given_range', 'report', 'kind'
 
     correct_range: tuple[int, int]
     given_range: tuple[int, int]
     report: bool
+    kind: ErrorKind
 
 @dataclass(frozen=True)
 class Diff:
@@ -143,7 +151,7 @@ class Diff:
     def add_matched(self, count: int = 1) -> 'Diff':
         return self.replace_error(None, count)
 
-    def add_error(self, error: ErrorRange) -> 'Diff':
+    def add_error(self, error: ErrorRange, matches: int = 0) -> 'Diff':
         if self.current_error_range:
             (ca, cb) = self.current_error_range.correct_range
             (cc, cd) = error.correct_range
@@ -151,10 +159,14 @@ class Diff:
             (ga, gb) = self.current_error_range.given_range
             (gc, gd) = error.given_range
 
-            if cb == cc and gb == gc:
-                return Diff(self.matched_count, self.reported_error_count, self.error_ranges, ErrorRange((ca, cd), (ga, gd), self.current_error_range.report or error.report))
+            if cb == cc and gb == gc and error.kind == self.current_error_range.kind:
+                return Diff(
+                    self.matched_count + matches,
+                    self.reported_error_count,
+                    self.error_ranges,
+                    ErrorRange((ca, cd), (ga, gd), self.current_error_range.report or error.report, error.kind))
 
-        return self.replace_error(error)
+        return self.replace_error(error, matches)
 
     def replace_error(self, new_error: Optional[ErrorRange], matches: int = 0) -> 'Diff':
         reported_error_count = self.reported_error_count
@@ -248,8 +260,21 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
     if correct == given:
         return []
 
-    if not given:
-        return [ErrorRange((0, len(correct)), (0, 0), False)]
+    correct_numeric_ranges = {}
+    given_numeric_ranges = {}
+
+    # If numeric comparison is enabled, find all numeric ranges in both answers
+    if config.numeric_comparison_factor > 0.0:
+        correct_numeric_ranges = find_numeric_ranges_by_end_index(correct, True)
+
+        if correct_numeric_ranges:
+            given_numeric_ranges = find_numeric_ranges_by_end_index(given, False)
+
+    # Find ranges to skip over for factor overrides
+    factor_skips = {range.end_index: range.digit_end_index for range in correct_numeric_ranges.values() if range.factor is not None}
+
+    if not given and not factor_skips:
+        return [ErrorRange((0, len(correct)), (0, 0), False, ErrorKind.REGULAR)]
 
     # If lenient validation is enabled, pre-compute the list of jumps which
     # are allowed to skip over parts which are allowed to be missing
@@ -273,7 +298,9 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
     best_diff_by_correct = empty_diff_by_correct[:]
 
     # Calculate the number of previous iterations to keep (min: 1)
-    diff_lookbehind = max(1, max((len(x) for xs in all_equivalent_strings for x in xs), default=0))
+    given_numeric_lookbehind = max((range.end_index - range.start_index for range in given_numeric_ranges.values()), default=0)
+    equivalent_string_lookbehind = max((len(x) for xs in all_equivalent_strings for x in xs), default=0)
+    diff_lookbehind = max(1, given_numeric_lookbehind, equivalent_string_lookbehind)
 
     # Tracks the best diff for each substring of "correct" in previous iterations
     best_diff_by_correct_and_prev_given_queue = collections.deque([empty_diff_by_correct[:]], diff_lookbehind)
@@ -297,19 +324,27 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
 
                 # Handle "correct" character missing
                 best_diff = best_diff_by_correct[correct_end - 1] \
-                    .add_error(ErrorRange((correct_end - 1, correct_end), (given_end, given_end), report_missing)) \
+                    .add_error(ErrorRange((correct_end - 1, correct_end), (given_end, given_end), report_missing, ErrorKind.REGULAR)) \
                     .pick_best(best_diff)
+
+                # Can also skip over missing factor overrides
+                if correct_end in factor_skips:
+                    skip = factor_skips[correct_end]
+
+                    best_diff = best_diff_by_correct[skip] \
+                        .add_error(ErrorRange((skip, correct_end), (given_end, given_end), False, ErrorKind.SKIP), correct_end - skip) \
+                        .pick_best(best_diff)
 
                 # Can also jump backwards for missing brackets/alternatives
                 for jump in jumps.get(correct_end, ()):
                     best_diff = best_diff_by_correct[jump] \
-                        .add_error(ErrorRange((jump, correct_end), (given_end, given_end), False)) \
+                        .add_error(ErrorRange((jump, correct_end), (given_end, given_end), False, ErrorKind.REGULAR)) \
                         .pick_best(best_diff)
 
             # Handle "given" character wrong
             if given_char:
                 best_diff = best_diff_by_correct_and_prev_given_queue[-1][correct_end] \
-                    .add_error(ErrorRange((correct_end, correct_end), (given_end - 1, given_end), True)) \
+                    .add_error(ErrorRange((correct_end, correct_end), (given_end - 1, given_end), True, ErrorKind.REGULAR)) \
                     .pick_best(best_diff)
 
             # Handle "given" character matching "correct" character
@@ -318,8 +353,8 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
                     .add_matched() \
                     .pick_best(best_diff)
 
-            # Handle matching equivalent strings
             if correct_char and given_char:
+                # Handle matching equivalent strings
                 for equivalent_strings in all_equivalent_strings:
                     for a in equivalent_strings:
                         if not ends_with(given, given_end, a):
@@ -332,6 +367,32 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
                             best_diff = best_diff_by_correct_and_prev_given_queue[-len(a)][correct_end - len(b)] \
                                 .add_matched(min(len(a), len(b))) \
                                 .pick_best(best_diff)
+
+                # Handle numeric comparisons
+                if given_end in given_numeric_ranges and correct_end in correct_numeric_ranges:
+                    given_numeric_range = given_numeric_ranges[given_end]
+                    correct_numeric_range = correct_numeric_ranges[correct_end]
+
+                    given_numeric_len = given_numeric_range.length()
+                    correct_numeric_len = correct_numeric_range.length()
+
+                    numeric_diff = best_diff_by_correct_and_prev_given_queue[-given_numeric_len][correct_numeric_range.start_index]
+
+                    # Mark every digit as matching and add one to ensure numeric comparison is prioritized
+                    numeric_matched = min(given_numeric_len, correct_numeric_len) + 1
+
+                    if correct_numeric_range.value == given_numeric_range.value:
+                        # If correct, just add matched without an error
+                        numeric_diff = numeric_diff.add_matched(numeric_matched)
+                    else:
+                        # Otherwise, check for minor error within comparison factor
+                        minor = correct_numeric_range.accepts(given_numeric_range, config)
+                        kind = ErrorKind.MINOR if minor else ErrorKind.REGULAR
+
+                        numeric_error = ErrorRange(correct_numeric_range.range(), given_numeric_range.range(), not minor, kind)
+                        numeric_diff = numeric_diff.add_error(numeric_error, numeric_matched)
+
+                    best_diff = numeric_diff.pick_best(best_diff)
 
             if best_diff:
                 best_diff_by_correct[correct_end] = best_diff

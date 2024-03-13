@@ -33,12 +33,15 @@ def get_config() -> Config:
 # Load user config
 user_config = get_config()
 
+# Custom CSS for numeric comparisons
+new_css = '<style>.typePass { background-color: #ffe49b; }</style>'
+
 # Up to Anki 2.1.54
 try:
     from aqt.reviewer import Reviewer
 
     def correct(self, given: str, correct: str, **kwargs) -> str:
-        return compare_answer_no_html(user_config, correct, given)
+        return new_css + compare_answer_no_html(user_config, correct, given)
 
     Reviewer.correct = correct # type: ignore
 except:
@@ -61,7 +64,7 @@ try:
         # Strip HTML tags
         expected = html_to_text_line(expected)
 
-        return compare_answer_no_html(user_config, expected, provided)
+        return new_css + compare_answer_no_html(user_config, expected, provided)
 
     Collection.compare_answer = compare_answer # type: ignore
 except:

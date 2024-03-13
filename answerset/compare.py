@@ -6,7 +6,7 @@ from . import util
 
 from .arrange import Choice, arrange
 from .config import Config
-from .diff import diff
+from .diff import ErrorKind, diff
 from .group import group_combining
 
 code_close_open_re = re.compile(r"</code><code>")
@@ -71,14 +71,20 @@ def split_options(config: Config, string: str, sep: str, bracket_ranges: list[tu
 
     return stripped
 
+def withClass(c: str, s: str) -> str:
+    return f"<span class={c}>{html.escape(s)}</span>" if s else ''
+
 def good(s: str) -> str:
-    return f"<span class=typeGood>{html.escape(s)}</span>" if s else ''
+    return withClass('typeGood', s)
+
+def minor_error(s: str) -> str:
+    return withClass('typePass', s)
 
 def bad(s: str) -> str:
-    return f"<span class=typeBad>{html.escape(s)}</span>" if s else ''
+    return withClass('typeBad', s)
 
 def missed(s: str) -> str:
-    return f"<span class=typeMissed>{html.escape(s)}</span>" if s else ''
+    return withClass('typeMissed', s)
 
 def not_code(s: str) -> str:
     return f"</code>{s}<code>" if s else ''
@@ -106,23 +112,38 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
     given_index = 0
     correct_index = 0
 
+    printed_given_error_last = False
+
     # Iterate through errors to render the diff
     for error in diff(config, correct, given):
         given_start, given_end = error.given_range
         correct_start, correct_end = error.correct_range
 
+        if given_start != given_index:
+            printed_given_error_last = False
+
         given_elem += good(''.join(given[given_index:given_start]))
         correct_elem += good(''.join(correct[correct_index:correct_start]))
 
         error_text = ''.join(given[given_start:given_end])
-        if error_text:
-            has_error = True
-            given_elem += bad(error_text)
-        elif error.report:
-            has_error = True
-            given_elem += bad('-')
+        missing_text = ''.join(correct[correct_start:correct_end])
 
-        correct_elem += missed(''.join(correct[correct_start:correct_end]))
+        if error.kind == ErrorKind.REGULAR:
+            if error_text:
+                has_error = True
+                printed_given_error_last = True
+                given_elem += bad(error_text)
+            elif error.report and not printed_given_error_last:
+                has_error = True
+                printed_given_error_last = True
+                given_elem += bad('-')
+
+            correct_elem += missed(missing_text)
+        elif error.kind == ErrorKind.MINOR:
+            has_error = True
+            printed_given_error_last = False
+            given_elem += minor_error(error_text)
+            correct_elem += minor_error(missing_text)
 
         given_index = given_end
         correct_index = correct_end
