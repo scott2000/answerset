@@ -1,4 +1,4 @@
-from answerset import compare_answer_no_html
+from answerset.compare import compare_answer_no_html
 from answerset.config import Config
 
 test_config = Config()

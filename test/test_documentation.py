@@ -1,4 +1,4 @@
-from answerset import compare_answer_no_html
+from answerset.compare import compare_answer_no_html
 from answerset.config import Config
 
 test_config = Config()
@@ -74,3 +74,39 @@ def test_doc_answer_comments():
     })
     result = compare_answer_no_html(config, correct, given)
     assert result == '<div id=typeans><code><span class=typeGood>mouse</span></code>, <code><span class=typeGood>c</span><span class=typeBad>ow</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>mouse</span></code>, <code><span class=typeGood>c</span><span class=typeMissed>at</span></code>, <code><span class=typeMissed>dog</span></code> (animals)<code></code></div>'
+
+def test_doc_numeric_missing_decimals():
+    correct = '$1.00'
+    given = '$1'
+    config = Config({
+        "Numeric Comparison Factor": 1.0,
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_doc_numeric_comparison():
+    correct = '215.0 m/s east'
+    given = '200 m/s east'
+    config = Config({
+        "Numeric Comparison Factor": 1.25,
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typePass>200</span><span class=typeGood> m/s east</span><br><span id=typearrow>&darr;</span><br><span class=typePass>215.0</span><span class=typeGood> m/s east</span></code></div>'
+
+def test_doc_numeric_comparison_disabled():
+    correct = '215.0 m/s east'
+    given = '200 m/s east'
+    config = Config({
+        "Numeric Comparison Factor": 0.0,
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>2</span><span class=typeBad>0</span><span class=typeGood>0 m/s east</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>2</span><span class=typeMissed>15.</span><span class=typeGood>0 m/s east</span></code></div>'
+
+def test_doc_numeric_factor_override():
+    correct = '3.14159?0.999'
+    given = '3.14'
+    config = Config({
+        "Numeric Comparison Factor": 1.0,
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typePass>3.14</span><br><span id=typearrow>&darr;</span><br><span class=typePass>3.14159</span></code></div>'
