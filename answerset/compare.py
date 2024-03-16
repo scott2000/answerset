@@ -1,4 +1,5 @@
 import html
+import re
 import unicodedata as ucd
 
 from . import util
@@ -7,6 +8,8 @@ from .arrange import Choice, arrange
 from .config import Config
 from .diff import diff
 from .group import group_combining
+
+code_close_open_re = re.compile(r"</code><code>")
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """
@@ -132,7 +135,8 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
         correct_elem += not_code(html.escape(correct_comment))
 
     # Append the diffs to the arrays
-    given_elems.append(given_elem)
+    if given_str:
+        given_elems.append(given_elem)
     correct_elems.append(correct_elem)
 
     # Return whether there was any error or not
@@ -184,7 +188,8 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         if given_choice and correct_choice:
             has_error |= render_diffs(config, given_choice, correct_choice, given_elems, correct_elems)
         elif correct_choice:
-            correct_elems.append(missed(correct_choice[0]) + correct_choice[1])
+            # Don't change has_error since there's no useful error information
+            render_diffs(config, ('', ''), correct_choice, given_elems, correct_elems)
         elif given_choice:
             has_error = True
             given_elems.append(bad(''.join(given_choice)))
@@ -225,5 +230,8 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         res += not_code(html.escape(correct_comment))
 
     res += '</code></div>'
+
+    # Merge adjacent code tags
+    res = code_close_open_re.sub('', res)
 
     return res
