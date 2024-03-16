@@ -68,3 +68,18 @@ is `" .-"`, which specifies to ignore missing spaces, periods (`.`), and
 hyphens (`-`), but you can put any characters between the quotes to ignore them
 instead. If you don't want to ignore any characters, don't put anything between
 the quotes (like `""`).
+
+## Numeric Comparison Factor
+
+This option sets how close to the correct answer numbers need to be for them to
+be considered almost correct. For instance, if set to 1.0 (the default), then
+the numbers must match exactly in numeric value to be accepted.
+
+If set to 1.25, then if the correct answer is `x`, any number between `x/1.25`
+and `x*1.25` will be accepted. Answers within this range will be shown in
+yellow by default to indicate that they are not exactly correct. You may also
+use the reciprocal of the factor, so a factor of 0.8 would be exactly
+equivalent to a factor of 1.25.
+
+If this option is set to 0, then numeric comparisons will be disabled entirely,
+meaning that numbers will be compared as strings of digits only.

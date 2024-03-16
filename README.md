@@ -61,7 +61,8 @@ Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
 There are a few special features which can be enabled/disabled in the add-on
 config in Anki:
 
-* [Lenient Validation](doc/lenient_validation.md) *(Enabled by default)*
+* [Lenient Validation](doc/lenient_validation.md)
+* [Numeric Comparison](doc/numeric_comparison.md)
 * [Comments](doc/comments.md) *(Disabled by default)*
 
 Additionally, there is an "Equivalent Strings" config option to treat certain
@@ -92,6 +93,10 @@ validation", where brackets, text separated by slashes, and certain other
 characters are allowed to be missing from the given answer.
 
 ## Changelog
+
+2024-03-17:
+
+* Added numeric comparison config option.
 
 2024-02-20:
 
