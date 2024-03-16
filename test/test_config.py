@@ -1,4 +1,4 @@
-from answerset import compare_answer_no_html
+from answerset.compare import compare_answer_no_html
 from answerset.config import Config
 
 def test_missing_space_no_lenient_validation():
