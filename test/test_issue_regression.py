@@ -255,6 +255,30 @@ def test_issue_23_equivalent_strings() -> None:
     result = compare_answer_no_html(config, correct, given)
     assert result == '<div id=typeans><code><span class=typeGood>I am happy</span><span class=typeMissed>.</span></code></div>'
 
+def test_issue_28_with_separator() -> None:
+    correct = 'Da pappa var ung, besøkte han oslo om sommeren.'
+    given = 'Da pappa var ung, besøkte han oslo om sommeren'
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>Da pappa var ung</span></code>, <code><span class=typeGood>besøkte han oslo om sommeren</span><span class=typeMissed>.</span></code></div>'
+
+def test_issue_28_disabled_separator() -> None:
+    correct = 'Da pappa var ung, besøkte han oslo om sommeren.'
+    given = 'Da pappa var ung, besøkte han oslo om sommeren'
+    config = Config({
+        "Separators": "",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>Da pappa var ung, besøkte han oslo om sommeren</span><span class=typeMissed>.</span></code></div>'
+
+def test_issue_28_missing_separator() -> None:
+    correct = 'Da pappa var ung, besøkte han oslo om sommeren.'
+    given = 'Da pappa var ung besøkte han oslo om sommeren'
+    config = Config({
+        "Ignored Characters": ",. ",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>Da pappa var ung</span><span class=typeMissed>,</span><span class=typeGood> besøkte han oslo om sommeren</span><span class=typeMissed>.</span></code></div>'
+
 def test_issue_31_slash_separator() -> None:
     correct = 'a,b / c,d'
     given = 'c,d/a,b'
