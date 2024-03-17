@@ -58,7 +58,7 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     return string, ''
 
-def split_options(config: Config, string: str, sep: Optional[str], bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
+def split_options(config: Config, string: str, sep: Optional[str], bracket_ranges: list[tuple[int, int]]) -> list[Choice]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
@@ -107,7 +107,8 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code>" if s else ''
 
-def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]) -> bool:
+# TODO: consider refactoring this into a DiffRenderer class
+def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]) -> tuple[bool, int]:
     """Create the diff comparison strings for each part."""
 
     # Separate comments from parts
@@ -124,6 +125,7 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
     correct = group_combining(correct_str)
 
     has_error = False
+    correct_count = 0
     given_elem = ''
     correct_elem = ''
 
@@ -142,6 +144,7 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
 
         given_elem += good(''.join(given[given_index:given_start]))
         correct_elem += good(''.join(correct[correct_index:correct_start]))
+        correct_count += correct_start - correct_index
 
         error_text = ''.join(given[given_start:given_end])
         missing_text = ''.join(correct[correct_start:correct_end])
@@ -168,6 +171,7 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
 
     given_elem += good(''.join(given[given_index:]))
     correct_elem += good(''.join(correct[correct_index:]))
+    correct_count += len(correct) - correct_index
 
     # If a comment wasn't diffed, add it back
     if correct_comment and not given_comment:
@@ -179,7 +183,7 @@ def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, g
     correct_elems.append(correct_elem)
 
     # Return whether there was any error or not
-    return has_error
+    return has_error, correct_count
 
 def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
@@ -216,24 +220,48 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     correct_split = split_options(config, correct, sep, correct_bracket_ranges)
 
     # Arrange the parts so that similar ones line up and render the diffs
-    has_error: bool = False
+    has_error = False
+    correct_count = 0
     given_elems: list[str] = []
     correct_elems: list[str] = []
     for given_choice, correct_choice in arrange(config, given_split, correct_split):
         if given_choice and correct_choice:
-            has_error |= render_diffs(config, given_choice, correct_choice, given_elems, correct_elems)
+            diff_error, diff_correct = render_diffs(config, given_choice, correct_choice, given_elems, correct_elems)
+            has_error |= diff_error
+            correct_count += diff_correct
         elif correct_choice:
-            # Don't change has_error since there's no useful error information
+            # Ignore result since this isn't a real diff
             render_diffs(config, ('', ''), correct_choice, given_elems, correct_elems)
         elif given_choice:
             has_error = True
             given_elems.append(bad(''.join(given_choice)))
 
+    # If there was an error and some of the correct answer choices were missing,
+    # the user may have just forgotten to type a separator.
+    if has_error and sep and len(given_elems) < len(correct_elems):
+        alt_given = given.strip()
+        alt_correct = correct.strip()
+
+        original_length = sum(len(answer) + len(comment) for answer, comment in correct_split)
+        length_diff = max(0, len(alt_correct) - original_length)
+
+        alt_given_elems: list[str] = []
+        alt_correct_elems: list[str] = []
+        alt_has_error, alt_correct_count = render_diffs(config, (alt_given, ''), (alt_correct, ''), alt_given_elems, alt_correct_elems)
+
+        # If the diff without splitting is more correct, then don't split
+        if alt_correct_count - length_diff > correct_count:
+            sep = None
+            has_error = alt_has_error
+            correct_count = alt_correct_count
+            given_elems = alt_given_elems
+            correct_elems = alt_correct_elems
+
     # Diff comments if they were given
     if given_comment:
         given = given_comment.strip()
         correct = correct_comment.strip()
-        has_error |= render_diffs(config, (given, ''), (correct, ''), given_elems, correct_elems)
+        has_error |= render_diffs(config, (given, ''), (correct, ''), given_elems, correct_elems)[0]
 
     sep = not_code(html.escape(format_separator(sep)))
     res = '<div id=typeans><code>'

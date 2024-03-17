@@ -99,6 +99,7 @@ characters are allowed to be missing from the given answer.
 2024-03-18:
 
 * Added config option to change answer choice separators.
+* Improved handling of missing answer choice separators.
 
 2024-03-17:
 
