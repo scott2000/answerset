@@ -89,7 +89,7 @@ def missed(s: str) -> str:
 def not_code(s: str) -> str:
     return f"</code>{s}<code>" if s else ''
 
-def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]):
+def render_diffs(config: Config, given_choice: Choice, correct_choice: Choice, given_elems: list[str], correct_elems: list[str]) -> bool:
     """Create the diff comparison strings for each part."""
 
     # Separate comments from parts

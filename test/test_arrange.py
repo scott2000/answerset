@@ -3,11 +3,11 @@ from answerset.config import Config
 
 test_config = Config()
 
-def test_arrange_empty():
+def test_arrange_empty() -> None:
     result = arrange(test_config, [], [])
     assert result == []
 
-def test_arrange_given_empty():
+def test_arrange_given_empty() -> None:
     result = arrange(
         test_config,
         [],
@@ -18,7 +18,7 @@ def test_arrange_given_empty():
     ]
     assert result == expected
 
-def test_arrange_correct_empty():
+def test_arrange_correct_empty() -> None:
     result = arrange(
         test_config,
         [('abc', '')],
@@ -29,7 +29,7 @@ def test_arrange_correct_empty():
     ]
     assert result == expected
 
-def test_arrange_one():
+def test_arrange_one() -> None:
     result = arrange(
         test_config,
         [('abc', '')],
@@ -40,7 +40,7 @@ def test_arrange_one():
     ]
     assert result == expected
 
-def test_arrange_two():
+def test_arrange_two() -> None:
     result = arrange(
         test_config,
         [('abc', ''), ('def', '')],
@@ -52,7 +52,7 @@ def test_arrange_two():
     ]
     assert result == expected
 
-def test_arrange_swap():
+def test_arrange_swap() -> None:
     result = arrange(
         test_config,
         [('def', ' [def given]'), ('abc', ' [abc given]')],
@@ -64,7 +64,7 @@ def test_arrange_swap():
     ]
     assert result == expected
 
-def test_arrange_missing():
+def test_arrange_missing() -> None:
     result = arrange(
         test_config,
         [('def', '')],
@@ -76,7 +76,7 @@ def test_arrange_missing():
     ]
     assert result == expected
 
-def test_arrange_extra():
+def test_arrange_extra() -> None:
     result = arrange(
         test_config,
         [('abc', ''), ('def', '')],
@@ -88,7 +88,7 @@ def test_arrange_extra():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_1():
+def test_arrange_with_mistake_1() -> None:
     result = arrange(
         test_config,
         [('deff', '')],
@@ -100,7 +100,7 @@ def test_arrange_with_mistake_1():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_2():
+def test_arrange_with_mistake_2() -> None:
     result = arrange(
         test_config,
         [('eff', ''), ('ab', '')],
@@ -112,7 +112,7 @@ def test_arrange_with_mistake_2():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_3():
+def test_arrange_with_mistake_3() -> None:
     result = arrange(
         test_config,
         [('def', ''), ('cab', '')],
@@ -124,7 +124,7 @@ def test_arrange_with_mistake_3():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_4():
+def test_arrange_with_mistake_4() -> None:
     result = arrange(
         test_config,
         [('fat', ''), ('house', ''), ('horse', ''), ('cot', '')],
@@ -138,7 +138,7 @@ def test_arrange_with_mistake_4():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_5():
+def test_arrange_with_mistake_5() -> None:
     result = arrange(
         test_config,
         [('some answer', '')],
@@ -150,7 +150,7 @@ def test_arrange_with_mistake_5():
     ]
     assert result == expected
 
-def test_arrange_with_mistake_6():
+def test_arrange_with_mistake_6() -> None:
     result = arrange(
         test_config,
         [('mouse', ''), ('cow', '')],
@@ -163,7 +163,7 @@ def test_arrange_with_mistake_6():
     ]
     assert result == expected
 
-def test_arrange_with_junk():
+def test_arrange_with_junk() -> None:
     result = arrange(
         test_config,
         [('some ------------------- answer', '')],
@@ -175,7 +175,7 @@ def test_arrange_with_junk():
     ]
     assert result == expected
 
-def test_arrange_with_only_junk():
+def test_arrange_with_only_junk() -> None:
     result = arrange(
         test_config,
         [('.-', '')],
