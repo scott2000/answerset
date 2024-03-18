@@ -254,3 +254,12 @@ def test_issue_23_equivalent_strings() -> None:
     })
     result = compare_answer_no_html(config, correct, given)
     assert result == '<div id=typeans><code><span class=typeGood>I am happy</span><span class=typeMissed>.</span></code></div>'
+
+def test_issue_31_slash_separator() -> None:
+    correct = 'a,b / c,d'
+    given = 'c,d/a,b'
+    config = Config({
+        "Separators": "/",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>c,d</span></code> / <code><span class=typeGood>a,b</span></code></div>'

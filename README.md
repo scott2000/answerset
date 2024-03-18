@@ -54,7 +54,9 @@ for rearranging. Otherwise, `,` will be used. This means that this:
 a, b, c; d, e, f
 ```
 
-Will be parsed into `a, b, c` as one answer and `d, e, f` as another.
+Will be parsed into `a, b, c` as one answer and `d, e, f` as another. If you
+want to use different answer choice separators, you can configure them in the
+Anki add-on config page.
 
 ## Config
 
@@ -93,6 +95,10 @@ validation", where brackets, text separated by slashes, and certain other
 characters are allowed to be missing from the given answer.
 
 ## Changelog
+
+2024-03-18:
+
+* Added config option to change answer choice separators.
 
 2024-03-17:
 

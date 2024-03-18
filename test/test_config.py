@@ -153,3 +153,30 @@ def test_ignored_characters_normalization_2() -> None:
     })
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
+
+def test_separator_first_choice() -> None:
+    correct = 'a2b1c2d'
+    given = 'c2d1a2b'
+    config = Config({
+        "Separators": "123",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_separator_last_choice() -> None:
+    correct = 'abc3def'
+    given = 'def3abc'
+    config = Config({
+        "Separators": "123",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' not in result
+
+def test_separator_none() -> None:
+    correct = 'abc, def'
+    given = 'def, abc'
+    config = Config({
+        "Separators": "",
+    })
+    result = compare_answer_no_html(config, correct, given)
+    assert 'typearrow' in result

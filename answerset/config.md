@@ -83,3 +83,15 @@ equivalent to a factor of 1.25.
 
 If this option is set to 0, then numeric comparisons will be disabled entirely,
 meaning that numbers will be compared as strings of digits only.
+
+## Separators
+
+This option configures which characters can be used to separate answer choices.
+The default value is `";,"`, meaning that if there are any semicolons, then
+semicolons will be used as the answer separator, otherwise if there are any
+commas, then commas will be used, otherwise answers will not be split at all.
+
+If you want to answer in full sentences, it may be a good idea to change this
+to `";"` to prevent commas from being misinterpreted. If you only use this
+add-on for other features, you could even set it to `""` to prevent any answers
+from being split into choices.

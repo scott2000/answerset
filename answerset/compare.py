@@ -1,6 +1,7 @@
 import html
 import re
 import unicodedata as ucd
+from typing import Optional
 
 from . import util
 
@@ -57,7 +58,7 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     return string, ''
 
-def split_options(config: Config, string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
+def split_options(config: Config, string: str, sep: Optional[str], bracket_ranges: list[tuple[int, int]]) -> list[tuple[str, str]]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
@@ -70,6 +71,23 @@ def split_options(config: Config, string: str, sep: str, bracket_ranges: list[tu
             stripped.append(split_comment(s, '[', ']', config.answer_choice_comments))
 
     return stripped
+
+def pick_separator(config: Config, correct: str, correct_bracket_ranges: list[tuple[int, int]]) -> Optional[str]:
+    """Pick a separator based on the separators config option."""
+
+    for sep in config.separators:
+        if util.has_separator(correct, sep, correct_bracket_ranges):
+            return sep
+
+    return None
+
+def format_separator(sep: Optional[str]) -> str:
+    if sep == ';' or sep == ',':
+        return f'{sep} '
+    elif sep and sep != ' ':
+        return f' {sep} '
+    else:
+        return ' '
 
 def withClass(c: str, s: str) -> str:
     return f"<span class={c}>{html.escape(s)}</span>" if s else ''
@@ -191,11 +209,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         given_bracket_ranges = []
         correct_bracket_ranges = []
 
-    # Pick separator as ';' if one is used, otherwise ','
-    if util.has_separator(correct, ';', correct_bracket_ranges):
-        sep = ';'
-    else:
-        sep = ','
+    sep = pick_separator(config, correct, correct_bracket_ranges)
 
     # Split on the separator
     given_split = split_options(config, given, sep, given_bracket_ranges)
@@ -221,7 +235,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
         correct = correct_comment.strip()
         has_error |= render_diffs(config, (given, ''), (correct, ''), given_elems, correct_elems)
 
-    sep = not_code(html.escape(sep) + ' ')
+    sep = not_code(html.escape(format_separator(sep)))
     res = '<div id=typeans><code>'
 
     # Only show the given part if there was an error

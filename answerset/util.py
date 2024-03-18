@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import Optional
 
 from .config import Config
 
@@ -42,7 +43,10 @@ def find_indices(haystack: str, needle: str, ranges: list[tuple[int, int]]) -> I
 def has_separator(string: str, sep: str, bracket_ranges: list[tuple[int, int]]) -> bool:
     return any(True for _ in find_indices(string, sep, bracket_ranges))
 
-def split_except_for_ranges(string: str, sep: str, ranges: list[tuple[int, int]]) -> list[str]:
+def split_except_for_ranges(string: str, sep: Optional[str], ranges: list[tuple[int, int]]) -> list[str]:
+    if not sep:
+        return [string]
+
     sep_indices = list(find_indices(string, sep, ranges))
 
     if not sep_indices:

@@ -52,6 +52,7 @@ class Config:
         self.ignore_case = get_config_var(config, 'Ignore Case', True)
         self.ignore_separators_in_brackets = get_config_var(config, 'Ignore Separators in Brackets', True)
         self.numeric_comparison_factor = get_config_var(config, 'Numeric Comparison Factor', 0.0)
+        self.separators = get_config_var(config, 'Separators', ';,')
 
         self.ignored_characters = ucd.normalize('NFC', casefold_if_ignore_case(get_config_var(config, 'Ignored Characters', ' .-'), self.ignore_case))
         self.equivalent_strings = get_equivalent_strings_config_var(config, 'Equivalent Strings', [], self.ignore_case)
