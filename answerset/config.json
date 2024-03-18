@@ -6,5 +6,6 @@
     "Ignore Case": true,
     "Ignore Separators in Brackets": true,
     "Ignored Characters": " .-",
-    "Numeric Comparison Factor": 1.0
+    "Numeric Comparison Factor": 1.0,
+    "Separators": ";,"
 }
