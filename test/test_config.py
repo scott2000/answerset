@@ -1,7 +1,7 @@
 from answerset.compare import compare_answer_no_html
 from answerset.config import Config
 
-def test_missing_space_no_lenient_validation():
+def test_missing_space_no_lenient_validation() -> None:
     correct = 'test answer'
     given = 'testanswer'
     config = Config({
@@ -10,7 +10,7 @@ def test_missing_space_no_lenient_validation():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_missing_parentheses_no_lenient_validation():
+def test_missing_parentheses_no_lenient_validation() -> None:
     correct = 'test (word) answer'
     given = 'testanswer'
     config = Config({
@@ -19,7 +19,7 @@ def test_missing_parentheses_no_lenient_validation():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_missing_alternative_no_lenient_validation():
+def test_missing_alternative_no_lenient_validation() -> None:
     correct = 'test abc/def/ghi test'
     given = 'test def test'
     config = Config({
@@ -28,7 +28,7 @@ def test_missing_alternative_no_lenient_validation():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_equivalent_strings_ignore_case():
+def test_equivalent_strings_ignore_case() -> None:
     correct = 'dog and moose'
     given = 'CAT and MOUSE'
     config = Config({
@@ -40,7 +40,7 @@ def test_equivalent_strings_ignore_case():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_equivalent_strings_ignore_case_unicode():
+def test_equivalent_strings_ignore_case_unicode() -> None:
     correct = 'xß'
     given = 'y'
     config = Config({
@@ -51,7 +51,7 @@ def test_equivalent_strings_ignore_case_unicode():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_equivalent_strings_no_ignore_case():
+def test_equivalent_strings_no_ignore_case() -> None:
     correct = 'dog and moose'
     given = 'CAT and MOUSE'
     config = Config({
@@ -64,7 +64,7 @@ def test_equivalent_strings_no_ignore_case():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_equivalent_strings_normalization_1():
+def test_equivalent_strings_normalization_1() -> None:
     correct = '\u212B'
     given = 'A'
     config = Config({
@@ -75,7 +75,7 @@ def test_equivalent_strings_normalization_1():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_equivalent_strings_normalization_2():
+def test_equivalent_strings_normalization_2() -> None:
     correct = 'A\u030A'
     given = 'A'
     config = Config({
@@ -87,21 +87,21 @@ def test_equivalent_strings_normalization_2():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_ignore_case():
+def test_ignore_case() -> None:
     correct = 'I saw him'
     given = 'i saw Him'
     config = Config()
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_ignore_case_unicode():
+def test_ignore_case_unicode() -> None:
     correct = 'xßy'
     given = 'xssy'
     config = Config()
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_no_ignore_case():
+def test_no_ignore_case() -> None:
     correct = 'I saw him'
     given = 'i saw Him'
     config = Config({
@@ -110,14 +110,14 @@ def test_no_ignore_case():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_ignore_separators_in_brackets():
+def test_ignore_separators_in_brackets() -> None:
     correct = '(abc, def)'
     given = '(def, abc)'
     config = Config()
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_no_ignore_separators_in_brackets():
+def test_no_ignore_separators_in_brackets() -> None:
     correct = '(abc, def)'
     given = 'def, abc'
     config = Config({
@@ -126,7 +126,7 @@ def test_no_ignore_separators_in_brackets():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_missing_space_not_ignored():
+def test_missing_space_not_ignored() -> None:
     correct = 'test answer'
     given = 'testanswer'
     config = Config({
@@ -135,7 +135,7 @@ def test_missing_space_not_ignored():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' in result
 
-def test_ignored_characters_normalization_1():
+def test_ignored_characters_normalization_1() -> None:
     correct = 'test \u212B'
     given = 'test'
     config = Config({
@@ -144,7 +144,7 @@ def test_ignored_characters_normalization_1():
     result = compare_answer_no_html(config, correct, given)
     assert 'typearrow' not in result
 
-def test_ignored_characters_normalization_2():
+def test_ignored_characters_normalization_2() -> None:
     correct = 'test A\u030A'
     given = 'test'
     config = Config({

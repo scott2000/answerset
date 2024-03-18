@@ -18,12 +18,12 @@ def get_config_var(config: Any, var_name: str, default_value: T) -> T:
     if type(value) is not type(default_value):
         return default_value
 
-    return value
+    return value # type: ignore
 
 def casefold_if_ignore_case(s: str, ignore_case: bool) -> str:
     return s.casefold() if ignore_case else s
 
-def get_equivalent_strings_config_var(config: Any, var_name: str, default_value: list[str], ignore_case: bool) -> list[list[list[str]]]:
+def get_equivalent_strings_config_var(config: Any, var_name: str, default_value: list[list[str]], ignore_case: bool) -> list[list[list[str]]]:
     # BUG: if there is an equivalence ["ß", "x"] and the answer is "ss", then "x" is not accepted
     # TODO: consider grouping combining characters after finding diff instead to resolve this bug
     return list(
@@ -45,7 +45,7 @@ def get_equivalent_strings_config_var(config: Any, var_name: str, default_value:
     )
 
 class Config:
-    def __init__(self, config: Any = None):
+    def __init__(self, config: Any = None) -> None:
         self.answer_choice_comments = get_config_var(config, 'Enable Answer Choice Comments [...]', False)
         self.answer_comments = get_config_var(config, 'Enable Answer Comments (...)', False)
         self.lenient_validation = get_config_var(config, 'Enable Lenient Validation', True)

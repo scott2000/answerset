@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import Any
+
 from .compare import compare_answer_no_html
 from .config import Config
 
@@ -40,7 +42,7 @@ new_css = '<style>.typePass { background-color: #ffe49b; }</style>'
 try:
     from aqt.reviewer import Reviewer
 
-    def correct(self, given: str, correct: str, **kwargs) -> str:
+    def correct(self: Reviewer, given: str, correct: str, **kwargs: Any) -> str:
         return new_css + compare_answer_no_html(user_config, correct, given)
 
     Reviewer.correct = correct # type: ignore

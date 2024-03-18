@@ -73,7 +73,7 @@ ChoicePair = tuple[Optional[Choice], Optional[Choice]]
 class Arranger:
     __slots__ = 'config', 'given', 'correct', 'memo', 'closest', 'assigned', 'used'
 
-    def __init__(self, config: Config, given: list[Choice], correct: list[Choice]):
+    def __init__(self, config: Config, given: list[Choice], correct: list[Choice]) -> None:
         self.config = config
         self.given = given
         self.correct = correct

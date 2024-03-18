@@ -24,7 +24,7 @@ test: check
 	$(PYTHON) -m pytest --junitxml=$(TEST_REPORT_FILE)
 
 check:
-	mypy -p answerset -p test
+	mypy -p answerset -p test --strict
 
 $(OUTPUT_FILE): $(SOURCE_FILES)
 	zip -j $@ $^
