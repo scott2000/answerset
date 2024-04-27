@@ -5,9 +5,12 @@ from typing import Optional
 
 from . import util
 
+from .arrange import Choice
 from .config import Config
 from .group import group_combining, has_multiple_chars
 from .numeric import find_numeric_ranges_by_end_index
+
+max_matched = 0x7fffffff
 
 def is_alternative_stop(config: Config, ch: str) -> bool:
     """Check if a character should stop an alternative outside of brackets."""
@@ -232,7 +235,7 @@ def casefold_and_record_split_strings(ch: str, split_strings: dict[str, list[str
 
     return new_ch
 
-def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRange]:
+def diff(config: Config, given: list[str], correct: list[str]) -> Diff:
     """
     Find the differences between the correct answer and the given answer and
     return a list of errors. If lenient validation is enabled, don't mark
@@ -258,7 +261,7 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
                 all_equivalent_strings.append([[new_ch], split_strings[new_ch]])
 
     if correct == given:
-        return []
+        return Diff(max_matched, 0, [], None)
 
     correct_numeric_ranges = {}
     given_numeric_ranges = {}
@@ -274,7 +277,7 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
     factor_skips = {range.end_index: range.digit_end_index for range in correct_numeric_ranges.values() if range.factor is not None}
 
     if not given and not factor_skips:
-        return [ErrorRange((0, len(correct)), (0, 0), False, ErrorKind.REGULAR)]
+        return Diff(0, 0, [ErrorRange((0, len(correct)), (0, 0), False, ErrorKind.REGULAR)], None)
 
     # If lenient validation is enabled, pre-compute the list of jumps which
     # are allowed to skip over parts which are allowed to be missing
@@ -403,5 +406,38 @@ def diff(config: Config, correct: list[str], given: list[str]) -> list[ErrorRang
 
     # Return the error ranges from the best diff for the whole strings
     return best_diff_by_correct_and_prev_given_queue[-1][-1] \
-        .replace_error(None) \
-        .error_ranges
+        .replace_error(None)
+
+class DiffedChoicePair:
+    __slots__ = 'config', 'given', 'correct', 'correct_comment', 'cached_diff'
+
+    def __init__(self, config: Config, given_choice: Choice, correct_choice: Choice) -> None:
+        self.config = config
+
+        # Separate comments from parts
+        given_str, given_comment = given_choice
+        correct_str, correct_comment = correct_choice
+
+        # If a comment was given, add both comments to the strings
+        if given_comment:
+            given_str += given_comment
+            correct_str += correct_comment
+            self.correct_comment = ''
+        else:
+            self.correct_comment = correct_comment
+
+        # Group combining characters to give cleaner diffs
+        self.given = group_combining(given_str)
+        self.correct = group_combining(correct_str)
+
+        self.cached_diff: Optional[Diff] = None
+
+    def diff(self) -> Diff:
+        if self.cached_diff:
+            return self.cached_diff
+
+        self.cached_diff = diff(self.config, self.given, self.correct)
+        return self.cached_diff
+
+    def error_ranges(self) -> list[ErrorRange]:
+        return self.diff().error_ranges
