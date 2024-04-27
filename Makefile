@@ -1,5 +1,3 @@
-PYTHON = python
-
 SOURCE_FILES = $(wildcard answerset/*.py) answerset/config.json answerset/config.md
 OUTPUT_FILE = answerset.ankiaddon
 TEST_REPORT_FILE = pytest-junit.xml
@@ -23,7 +21,7 @@ clean:
 	rm -rf $(CACHE_DIRS) $(GENERATED_FILES)
 
 test: check
-	$(PYTHON) -m pytest --junitxml=$(TEST_REPORT_FILE) $(COVERAGE_FLAGS)
+	pytest --junitxml=$(TEST_REPORT_FILE) $(COVERAGE_FLAGS)
 
 check:
 	mypy -p answerset -p test --strict
