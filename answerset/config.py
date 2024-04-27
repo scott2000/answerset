@@ -65,6 +65,5 @@ class Config:
         self.whitespace_chars = ' \t\r\n'
         self.keep_in_alternative_chars = self.whitespace_chars + self.bracket_chars
         self.junk_chars = self.ignored_characters.replace(' ', self.whitespace_chars) + self.bracket_chars
-        self.junk_trans = {ord(ch): None for ch in self.junk_chars}
 
         self.allow_alternative_continue = "'-_"

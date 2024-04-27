@@ -5,10 +5,9 @@ from typing import Optional
 
 from . import util
 
-from .arrange import Choice, arrange
+from .arrange import arrange
 from .config import Config
-from .diff import DiffedChoicePair, ErrorKind
-from .group import group_combining
+from .diff import Choice, ChoicePair, ErrorKind, empty_choice
 
 code_close_open_re = re.compile(r"</code><code>")
 
@@ -108,7 +107,7 @@ def not_code(s: str) -> str:
     return f"</code>{s}<code>" if s else ''
 
 # TODO: consider refactoring this into a DiffRenderer class
-def render_diffs(diffed_choice: DiffedChoicePair, given_elems: list[str], correct_elems: list[str]) -> tuple[bool, int]:
+def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[str]) -> tuple[bool, int]:
     """Create the diff comparison strings for each part."""
 
     has_error = False
@@ -122,19 +121,19 @@ def render_diffs(diffed_choice: DiffedChoicePair, given_elems: list[str], correc
     printed_given_error_last = False
 
     # Iterate through errors to render the diff
-    for error in diffed_choice.error_ranges():
+    for error in pair.error_ranges():
         given_start, given_end = error.given_range
         correct_start, correct_end = error.correct_range
 
         if given_start != given_index:
             printed_given_error_last = False
 
-        given_elem += good(''.join(diffed_choice.given[given_index:given_start]))
-        correct_elem += good(''.join(diffed_choice.correct[correct_index:correct_start]))
+        given_elem += good(''.join(pair.given[given_index:given_start]))
+        correct_elem += good(''.join(pair.correct[correct_index:correct_start]))
         correct_count += correct_start - correct_index
 
-        error_text = ''.join(diffed_choice.given[given_start:given_end])
-        missing_text = ''.join(diffed_choice.correct[correct_start:correct_end])
+        error_text = ''.join(pair.given[given_start:given_end])
+        missing_text = ''.join(pair.correct[correct_start:correct_end])
 
         if error.kind == ErrorKind.REGULAR:
             if error_text:
@@ -156,16 +155,16 @@ def render_diffs(diffed_choice: DiffedChoicePair, given_elems: list[str], correc
         given_index = given_end
         correct_index = correct_end
 
-    given_elem += good(''.join(diffed_choice.given[given_index:]))
-    correct_elem += good(''.join(diffed_choice.correct[correct_index:]))
-    correct_count += len(diffed_choice.correct) - correct_index
+    given_elem += good(''.join(pair.given[given_index:]))
+    correct_elem += good(''.join(pair.correct[correct_index:]))
+    correct_count += len(pair.correct) - correct_index
 
     # If a comment wasn't diffed, add it back
-    if diffed_choice.correct_comment:
-        correct_elem += not_code(html.escape(diffed_choice.correct_comment))
+    if pair.correct_comment:
+        correct_elem += not_code(html.escape(pair.correct_comment))
 
     # Append the diffs to the arrays
-    if diffed_choice.given:
+    if pair.given:
         given_elems.append(given_elem)
     correct_elems.append(correct_elem)
 
@@ -211,17 +210,17 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     correct_count = 0
     given_elems: list[str] = []
     correct_elems: list[str] = []
-    for given_choice, correct_choice in arrange(config, given_split, correct_split):
-        if given_choice and correct_choice:
-            diff_error, diff_correct = render_diffs(DiffedChoicePair(config, given_choice, correct_choice), given_elems, correct_elems)
+    for pair in arrange(config, given_split, correct_split):
+        if isinstance(pair, ChoicePair):
+            diff_error, diff_correct = render_diffs(pair, given_elems, correct_elems)
             has_error |= diff_error
             correct_count += diff_correct
-        elif correct_choice:
+        elif pair.is_correct:
             # Ignore result since this isn't a real diff
-            render_diffs(DiffedChoicePair(config, ('', ''), correct_choice), given_elems, correct_elems)
-        elif given_choice:
+            render_diffs(ChoicePair(config, empty_choice, pair.choice), given_elems, correct_elems)
+        else:
             has_error = True
-            given_elems.append(bad(''.join(given_choice)))
+            given_elems.append(bad(''.join(pair.choice)))
 
     # If there was an error and some of the correct answer choices were missing,
     # the user may have just forgotten to type a separator.
@@ -234,7 +233,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
 
         alt_given_elems: list[str] = []
         alt_correct_elems: list[str] = []
-        alt_has_error, alt_correct_count = render_diffs(DiffedChoicePair(config, (alt_given, ''), (alt_correct, '')), alt_given_elems, alt_correct_elems)
+        alt_has_error, alt_correct_count = render_diffs(ChoicePair(config, (alt_given, ''), (alt_correct, '')), alt_given_elems, alt_correct_elems)
 
         # If the diff without splitting is more correct, then don't split
         if alt_correct_count - length_diff > correct_count:
@@ -248,7 +247,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     if given_comment:
         given = given_comment.strip()
         correct = correct_comment.strip()
-        has_error |= render_diffs(DiffedChoicePair(config, (given, ''), (correct, '')), given_elems, correct_elems)[0]
+        has_error |= render_diffs(ChoicePair(config, (given, ''), (correct, '')), given_elems, correct_elems)[0]
 
     sep = not_code(html.escape(format_separator(sep)))
     res = '<div id=typeans><code>'

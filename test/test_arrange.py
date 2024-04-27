@@ -1,7 +1,18 @@
-from answerset.arrange import arrange
+from typing import Optional, Union
+
+from answerset.arrange import UnmatchedChoice, arrange
 from answerset.config import Config
+from answerset.diff import Choice, ChoicePair
 
 test_config = Config()
+
+def to_basic_choices(pairs: list[Union[ChoicePair, UnmatchedChoice]]) -> list[Union[tuple[str, Choice], UnmatchedChoice]]:
+    return [
+        (''.join(pair.given), (''.join(pair.correct), pair.correct_comment))
+        if isinstance(pair, ChoicePair)
+        else pair
+        for pair in pairs
+    ]
 
 def test_arrange_empty() -> None:
     result = arrange(test_config, [], [])
@@ -14,9 +25,9 @@ def test_arrange_given_empty() -> None:
         [('abc', '')],
     )
     expected = [
-        (None, ('abc', '')),
+        UnmatchedChoice(True, ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_correct_empty() -> None:
     result = arrange(
@@ -25,9 +36,9 @@ def test_arrange_correct_empty() -> None:
         [],
     )
     expected = [
-        (('abc', ''), None),
+        UnmatchedChoice(False, ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_one() -> None:
     result = arrange(
@@ -36,9 +47,9 @@ def test_arrange_one() -> None:
         [('abc', '')],
     )
     expected = [
-        (('abc', ''), ('abc', '')),
+        ('abc', ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_two() -> None:
     result = arrange(
@@ -47,10 +58,10 @@ def test_arrange_two() -> None:
         [('abc', ''), ('def', '')],
     )
     expected = [
-        (('abc', ''), ('abc', '')),
-        (('def', ''), ('def', '')),
+        ('abc', ('abc', '')),
+        ('def', ('def', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_swap() -> None:
     result = arrange(
@@ -59,10 +70,10 @@ def test_arrange_swap() -> None:
         [('abc', ' [abc correct]'), ('def', ' [def correct]')],
     )
     expected = [
-        (('def', ' [def given]'), ('def', ' [def correct]')),
-        (('abc', ' [abc given]'), ('abc', ' [abc correct]')),
+        ('def [def given]', ('def [def correct]', '')),
+        ('abc [abc given]', ('abc [abc correct]', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_missing() -> None:
     result = arrange(
@@ -71,10 +82,10 @@ def test_arrange_missing() -> None:
         [('abc', ''), ('def', '')],
     )
     expected = [
-        (('def', ''), ('def', '')),
-        (None, ('abc', '')),
+        ('def', ('def', '')),
+        UnmatchedChoice(True, ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_extra() -> None:
     result = arrange(
@@ -83,10 +94,10 @@ def test_arrange_extra() -> None:
         [('def', '')],
     )
     expected = [
-        (('abc', ''), None),
-        (('def', ''), ('def', '')),
+        UnmatchedChoice(False, ('abc', '')),
+        ('def', ('def', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_1() -> None:
     result = arrange(
@@ -95,10 +106,10 @@ def test_arrange_with_mistake_1() -> None:
         [('abc', ''), ('def', '')],
     )
     expected = [
-        (('deff', ''), ('def', '')),
-        (None, ('abc', '')),
+        ('deff', ('def', '')),
+        UnmatchedChoice(True, ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_2() -> None:
     result = arrange(
@@ -107,10 +118,10 @@ def test_arrange_with_mistake_2() -> None:
         [('abc', ''), ('def', '')],
     )
     expected = [
-        (('eff', ''), ('def', '')),
-        (('ab', ''), ('abc', '')),
+        ('eff', ('def', '')),
+        ('ab', ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_3() -> None:
     result = arrange(
@@ -119,10 +130,10 @@ def test_arrange_with_mistake_3() -> None:
         [('abc', '')],
     )
     expected = [
-        (('def', ''), None),
-        (('cab', ''), ('abc', '')),
+        UnmatchedChoice(False, ('def', '')),
+        ('cab', ('abc', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_4() -> None:
     result = arrange(
@@ -131,12 +142,12 @@ def test_arrange_with_mistake_4() -> None:
         [('dog', ''), ('cat', ''), ('mouse', '')],
     )
     expected = [
-        (('fat', ''), None),
-        (('house', ''), ('mouse', '')),
-        (('horse', ''), ('dog', '')),
-        (('cot', ''), ('cat', '')),
+        UnmatchedChoice(False, ('fat', '')),
+        ('house', ('mouse', '')),
+        ('horse', ('dog', '')),
+        ('cot', ('cat', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_5() -> None:
     result = arrange(
@@ -145,10 +156,10 @@ def test_arrange_with_mistake_5() -> None:
         [('some answer (but with a super long comment that is technically wrong but should not be penalized)', ''), ('other answer', '')],
     )
     expected = [
-        (('some answer', ''), ('some answer (but with a super long comment that is technically wrong but should not be penalized)', '')),
-        (None, ('other answer', '')),
+        ('some answer', ('some answer (but with a super long comment that is technically wrong but should not be penalized)', '')),
+        UnmatchedChoice(True, ('other answer', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_mistake_6() -> None:
     result = arrange(
@@ -157,23 +168,23 @@ def test_arrange_with_mistake_6() -> None:
         [('dog', ''), ('cat', ''), ('mouse', ' [animal]')],
     )
     expected = [
-        (('mouse', ''), ('mouse', ' [animal]')),
-        (('cow', ''), ('cat', '')),
-        (None, ('dog', '')),
+        ('mouse', ('mouse', ' [animal]')),
+        ('cow', ('cat', '')),
+        UnmatchedChoice(True, ('dog', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_junk() -> None:
     result = arrange(
         test_config,
-        [('some ------------------- answer', '')],
-        [('------------------- answer', ''), ('some answer', '')],
+        [('some answer', '')],
+        [('answer', ''), ('some ------------------- answer', '')],
     )
     expected = [
-        (('some ------------------- answer', ''), ('some answer', '')),
-        (None, ('------------------- answer', '')),
+        ('some answer', ('some ------------------- answer', '')),
+        UnmatchedChoice(True, ('answer', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected
 
 def test_arrange_with_only_junk() -> None:
     result = arrange(
@@ -182,8 +193,8 @@ def test_arrange_with_only_junk() -> None:
         [('---', ''), ('-.-', ''), ('...', '')],
     )
     expected = [
-        (('.-', ''), ('-.-', '')),
-        (None, ('---', '')),
-        (None, ('...', '')),
+        ('.-', ('-.-', '')),
+        UnmatchedChoice(True, ('---', '')),
+        UnmatchedChoice(True, ('...', '')),
     ]
-    assert result == expected
+    assert to_basic_choices(result) == expected

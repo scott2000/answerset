@@ -80,21 +80,25 @@ This add-on is implemented as a monkey patch replacing
 these functions, it is not guaranteed to work in future updates. I have tested
 it in Anki 2.1.40 through Anki 23.12.1.
 
-The answer rearranging algorithm uses the
-[Longest Common Subsequence](https://en.wikipedia.org/wiki/Longest_common_subsequence)
-between "given" and "correct" answer choices to determine which correct answer
-is closest to which given answer for rearranging. The closest pair is grouped
-together first, then the next closest, and so on until there are no more pairs.
-Then, combining characters are grouped for the final difference, which then uses
-a similar algorithm to the default implementation. Comments are only compared if
-they are given when typing the answer in.
-
-The diff algorithm is also a modified version of the LCS, with a preference for
+The diffs between "given" and "correct" answer choices are rendered using a
+modified version of the [Longest Common Subsequence][LCS], with a preference for
 grouping error regions together. It also has been modified to support "lenient
 validation", where brackets, text separated by slashes, and certain other
-characters are allowed to be missing from the given answer.
+characters are allowed to be missing from the given answer. Combining characters
+are grouped before finding the difference to improve support for non-ASCII text.
+
+The answer rearranging algorithm uses the diff between "given" and "correct"
+answer choices to determine which correct answer is closest to which given
+answer for rearranging. The closest pair is grouped together first, then the
+next closest, and so on until there are no more pairs.
+
+[LCS]: https://en.wikipedia.org/wiki/Longest_common_subsequence
 
 ## Changelog
+
+2024-04-28:
+
+* Use diff algorithm while matching answer choices to ensure best diff.
 
 2024-03-18:
 
