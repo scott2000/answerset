@@ -287,3 +287,27 @@ def test_issue_31_slash_separator() -> None:
     })
     result = compare_answer_no_html(config, correct, given)
     assert result == '<div id=typeans><code><span class=typeGood>c,d</span></code> / <code><span class=typeGood>a,b</span></code></div>'
+
+def test_issue_34_diff_algorithm_for_arrange_1() -> None:
+    correct = "I'm travel(l)ing around the world., I travel around the world."
+    given = 'i travel around the world'
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>I travel around the world</span><span class=typeMissed>.</span></code>, <code><span class=typeMissed>I&#x27;m travel(l)ing around the world.</span></code></div>'
+
+def test_issue_34_diff_algorithm_for_arrange_2() -> None:
+    correct = "I travel around the world., I'm travel(l)ing around the world."
+    given = 'i travel around the world'
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>I travel around the world</span><span class=typeMissed>.</span></code>, <code><span class=typeMissed>I&#x27;m travel(l)ing around the world.</span></code></div>'
+
+def test_issue_34_diff_algorithm_for_arrange_3() -> None:
+    correct = "I'm travel(l)ing around the world., I travel around the world."
+    given = "i'm traveling around the world"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>I&#x27;m travel</span><span class=typeMissed>(l)</span><span class=typeGood>ing around the world</span><span class=typeMissed>.</span></code>, <code><span class=typeMissed>I travel around the world.</span></code></div>'
+
+def test_issue_34_diff_algorithm_for_arrange_4() -> None:
+    correct = "I travel around the world., I'm travel(l)ing around the world."
+    given = "i'm traveling around the world"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == '<div id=typeans><code><span class=typeGood>I&#x27;m travel</span><span class=typeMissed>(l)</span><span class=typeGood>ing around the world</span><span class=typeMissed>.</span></code>, <code><span class=typeMissed>I travel around the world.</span></code></div>'

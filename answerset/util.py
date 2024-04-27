@@ -4,7 +4,7 @@ from typing import Optional
 from .config import Config
 
 def is_junk(config: Config, ch: str) -> bool:
-    return len(ch) == 1 and ord(ch) in config.junk_trans
+    return len(ch) == 1 and ch in config.junk_chars
 
 def find_bracket_ranges(input: Iterable[str], lenient: bool = False, nested: bool = False) -> list[tuple[int, int]]:
     found_ranges = []

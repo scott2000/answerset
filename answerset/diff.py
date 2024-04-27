@@ -5,11 +5,11 @@ from typing import Optional
 
 from . import util
 
-from .arrange import Choice
-from .config import Config
+from .config import Config, casefold_if_ignore_case
 from .group import group_combining, has_multiple_chars
 from .numeric import find_numeric_ranges_by_end_index
 
+# Exact matches need the highest possible matched count
 max_matched = 0x7fffffff
 
 def is_alternative_stop(config: Config, ch: str) -> bool:
@@ -195,6 +195,13 @@ class Diff:
         else:
             return len(self.error_ranges) + 1
 
+    def prefix_match(self) -> int:
+        error_range = self.error_ranges[0] if self.error_ranges else self.current_error_range
+        if not error_range:
+            return max_matched
+
+        return min(error_range.correct_range[0], error_range.given_range[0])
+
     def pick_best(self, other: Optional['Diff']) -> 'Diff':
         if other is None or self.is_better_than(other):
             return self
@@ -219,13 +226,20 @@ class Diff:
             return self_errors < other_errors
 
         # It's better to already have an error range since it could expand
-        if self.current_error_range is None:
-            return False
-        if other.current_error_range is None:
-            return True
+        if (self.current_error_range is None) != (other.current_error_range is None):
+            return self.current_error_range is not None
 
         # It's better to already have a reporting error range since it could expand
-        return self.current_error_range.report and not other.current_error_range.report
+        if self.current_error_range and other.current_error_range and self.current_error_range.report != other.current_error_range.report:
+            return self.current_error_range.report
+
+        # Longer prefix match is better
+        self_prefix_match = self.prefix_match()
+        other_prefix_match = other.prefix_match()
+        return self_prefix_match > other_prefix_match
+
+# Diff representing an exact match with no error ranges
+exact_match_diff = Diff(max_matched, 0, [], None)
 
 def casefold_and_record_split_strings(ch: str, split_strings: dict[str, list[str]]) -> str:
     new_ch = ch.casefold()
@@ -259,9 +273,6 @@ def diff(config: Config, given: list[str], correct: list[str]) -> Diff:
             all_equivalent_strings = all_equivalent_strings[:]
             for new_ch in split_strings:
                 all_equivalent_strings.append([[new_ch], split_strings[new_ch]])
-
-    if correct == given:
-        return Diff(max_matched, 0, [], None)
 
     correct_numeric_ranges = {}
     given_numeric_ranges = {}
@@ -408,7 +419,13 @@ def diff(config: Config, given: list[str], correct: list[str]) -> Diff:
     return best_diff_by_correct_and_prev_given_queue[-1][-1] \
         .replace_error(None)
 
-class DiffedChoicePair:
+# Answer choice and comment tuple
+Choice = tuple[str, str]
+
+# Placeholder for missing choice when matching answers
+empty_choice: Choice = ('', '')
+
+class ChoicePair:
     __slots__ = 'config', 'given', 'correct', 'correct_comment', 'cached_diff'
 
     def __init__(self, config: Config, given_choice: Choice, correct_choice: Choice) -> None:
@@ -430,7 +447,11 @@ class DiffedChoicePair:
         self.given = group_combining(given_str)
         self.correct = group_combining(correct_str)
 
-        self.cached_diff: Optional[Diff] = None
+        given_casefolded = casefold_if_ignore_case(given_str, self.config.ignore_case)
+        correct_casefolded = casefold_if_ignore_case(correct_str, self.config.ignore_case)
+
+        # If exact match, set cached diff immediately
+        self.cached_diff: Optional[Diff] = exact_match_diff if given_casefolded == correct_casefolded else None
 
     def diff(self) -> Diff:
         if self.cached_diff:
@@ -438,6 +459,12 @@ class DiffedChoicePair:
 
         self.cached_diff = diff(self.config, self.given, self.correct)
         return self.cached_diff
+
+    def is_better_than(self, other: Optional['ChoicePair']) -> bool:
+        return other is None or self.diff().is_better_than(other.diff())
+
+    def is_exact_match(self) -> bool:
+        return self.cached_diff is not None and self.cached_diff.matched_count == max_matched
 
     def error_ranges(self) -> list[ErrorRange]:
         return self.diff().error_ranges
