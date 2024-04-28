@@ -44,23 +44,50 @@ class Arranger:
         self.cached_pairs[(given_index, correct_index)] = pair
         return pair
 
+    def assign_to_closest(self, given_index: int) -> None:
+        """Make the final assignment for a "given" part."""
+
+        correct_index = self.closest_to_given[given_index]
+        self.assigned_to_given[given_index] = correct_index
+        self.used_correct.add(correct_index)
+
+    def is_finished(self) -> bool:
+        """Check whether all assignments have been made."""
+
+        # If all "given" parts are assigned, we are done
+        if len(self.assigned_to_given) == len(self.given):
+            return True
+
+        # If all "correct" parts are used, we are done
+        if len(self.used_correct) == len(self.correct):
+            return True
+
+        return False
+
+    def assign_exact_matches(self) -> None:
+        """Assign all exact matches """
+
+        for given_index in range(len(self.given)):
+            if self.is_finished():
+                break
+
+            for correct_index in range(len(self.correct)):
+                if correct_index in self.used_correct:
+                    continue
+
+                pair = self.get_choice_pair(given_index, correct_index)
+
+                if pair.is_exact_match():
+                    self.closest_to_given[given_index] = correct_index
+                    self.assign_to_closest(given_index)
+                    break
+
     def best_choice_pair_for(self, given_index: int) -> Optional[ChoicePair]:
         """Find the best ChoicePair for a specific "given" part."""
 
         # Check for already found best ChoicePair
         if given_index in self.closest_to_given and self.closest_to_given[given_index] not in self.used_correct:
             return self.get_choice_pair(given_index, self.closest_to_given[given_index])
-
-        # Check for exact matches
-        for correct_index in range(len(self.correct)):
-            # Skip "correct" parts which were already used
-            if correct_index in self.used_correct:
-                continue
-
-            pair = self.get_choice_pair(given_index, correct_index)
-            if pair.is_exact_match():
-                self.closest_to_given[given_index] = correct_index
-                return pair
 
         # Find the closest "correct" part
         closest = None
@@ -86,12 +113,7 @@ class Arranger:
         steps are needed and False otherwise.
         """
 
-        # If all "given" parts are assigned, we are done
-        if len(self.assigned_to_given) == len(self.given):
-            return False
-
-        # If all "correct" parts are used, we are done
-        if len(self.used_correct) == len(self.correct):
+        if self.is_finished():
             return False
 
         # Find closest pair of "given" and "correct"
@@ -107,17 +129,10 @@ class Arranger:
                 closest = given_index
                 closest_choice_pair = pair
 
-                if pair.is_exact_match():
-                    break
-
         if closest is None:
             return False
 
-        # Record the assignment
-        target = self.closest_to_given[closest]
-        self.assigned_to_given[closest] = target
-        self.used_correct.add(target)
-
+        self.assign_to_closest(closest)
         return True
 
     def finalize(self) -> list[Union[ChoicePair, UnmatchedChoice]]:
@@ -142,6 +157,7 @@ def arrange(config: Config, given: list[Choice], correct: list[Choice]) -> list[
     """Rearrange parts so that similar ones line up."""
 
     arranger = Arranger(config, given, correct)
+    arranger.assign_exact_matches()
     while arranger.step():
         pass
 
