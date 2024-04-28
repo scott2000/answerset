@@ -4,15 +4,17 @@ from typing import Optional, Union
 from .config import Config
 from .diff import Choice, ChoicePair
 
+
 @dataclass(frozen=True)
 class UnmatchedChoice:
-    __slots__ = 'is_correct', 'choice'
+    __slots__ = "is_correct", "choice"
 
     is_correct: bool
     choice: Choice
 
+
 class Arranger:
-    __slots__ = 'config', 'given', 'correct', 'cached_pairs', 'closest_to_given', 'assigned_to_given', 'used_correct'
+    __slots__ = "config", "given", "correct", "cached_pairs", "closest_to_given", "assigned_to_given", "used_correct"
 
     def __init__(self, config: Config, given: list[Choice], correct: list[Choice]) -> None:
         self.config = config
@@ -59,13 +61,10 @@ class Arranger:
             return True
 
         # If all "correct" parts are used, we are done
-        if len(self.used_correct) == len(self.correct):
-            return True
-
-        return False
+        return len(self.used_correct) == len(self.correct)
 
     def assign_exact_matches(self) -> None:
-        """Assign all exact matches """
+        """Assign all exact matches."""
 
         for given_index in range(len(self.given)):
             if self.is_finished():
@@ -152,6 +151,7 @@ class Arranger:
                 parts.append(UnmatchedChoice(True, self.correct[correct_index]))
 
         return parts
+
 
 def arrange(config: Config, given: list[Choice], correct: list[Choice]) -> list[Union[ChoicePair, UnmatchedChoice]]:
     """Rearrange parts so that similar ones line up."""

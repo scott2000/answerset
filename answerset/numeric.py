@@ -4,8 +4,9 @@ from typing import Optional, Union
 
 from .config import Config
 
-digits = '0123456789'
-factor_separator = '?'
+digits = "0123456789"
+factor_separator = "?"
+
 
 @dataclass(frozen=True)
 class NumericRange:
@@ -15,7 +16,7 @@ class NumericRange:
     value: Union[int, float]
     factor: Optional[float]
 
-    def accepts(self, other: 'NumericRange', config: Config) -> bool:
+    def accepts(self, other: "NumericRange", config: Config) -> bool:
         if other.value == self.value:
             return True
 
@@ -46,6 +47,7 @@ class NumericRange:
     def length(self) -> int:
         return self.digit_end_index - self.start_index
 
+
 def skip_digits(answer: list[str], index: int) -> int:
     """Skip over a series of digits, assuming the first digit is valid."""
 
@@ -56,15 +58,17 @@ def skip_digits(answer: list[str], index: int) -> int:
 
     return index
 
+
 def skip_float(answer: list[str], index: int) -> int:
     """Skip over a float with optional decimals, assuming the first digit is valid."""
 
     index = skip_digits(answer, index)
 
-    if index + 1 < len(answer) and answer[index] == '.' and answer[index + 1] in digits:
+    if index + 1 < len(answer) and answer[index] == "." and answer[index + 1] in digits:
         index = skip_digits(answer, index + 1)
 
     return index
+
 
 def find_numeric_ranges(answer: list[str], allow_factor: bool) -> list[NumericRange]:
     """Find all numeric ranges present in an answer for matching."""
@@ -85,8 +89,8 @@ def find_numeric_ranges(answer: list[str], allow_factor: bool) -> list[NumericRa
             digit_end_index = index
 
             # Parse float
-            value_str = ''.join(answer[start_index:digit_end_index])
-            value = float(value_str) if '.' in value_str else int(value_str)
+            value_str = "".join(answer[start_index:digit_end_index])
+            value = float(value_str) if "." in value_str else int(value_str)
 
             factor: Optional[float] = None
 
@@ -94,7 +98,7 @@ def find_numeric_ranges(answer: list[str], allow_factor: bool) -> list[NumericRa
             if allow_factor and index + 1 < len(answer) and answer[index] == factor_separator and answer[index + 1] in digits:
                 factor_start_index = index + 1
                 index = skip_float(answer, factor_start_index)
-                factor = float(''.join(answer[factor_start_index:index]))
+                factor = float("".join(answer[factor_start_index:index]))
 
             result.append(NumericRange(start_index, digit_end_index, index, value, factor))
 
@@ -102,6 +106,7 @@ def find_numeric_ranges(answer: list[str], allow_factor: bool) -> list[NumericRa
 
     except ValueError:
         return []
+
 
 def find_numeric_ranges_by_end_index(answer: list[str], allow_factor: bool) -> dict[int, NumericRange]:
     return {range.digit_end_index: range for range in find_numeric_ranges(answer, allow_factor)}
