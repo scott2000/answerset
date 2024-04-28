@@ -4,12 +4,12 @@ import unicodedata as ucd
 from typing import Optional
 
 from . import util
-
 from .arrange import arrange
 from .config import Config
 from .diff import Choice, ChoicePair, ErrorKind, empty_choice
 
 code_close_open_re = re.compile(r"</code><code>")
+
 
 def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str, str]:
     """
@@ -20,11 +20,11 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
 
     # If disabled by config, don't try to split
     if not enabled:
-        return string, ''
+        return string, ""
 
     # If the string is too small or doesn't end with the delimiter, don't split
     if len(string) < 3 or string[-1] != end:
-        return string, ''
+        return string, ""
 
     # Iterate backwards through string checking for delimiters
     depth = 1
@@ -46,18 +46,24 @@ def split_comment(string: str, start: str, end: str, enabled: bool) -> tuple[str
                     break
 
                 # If there is no space before the start of the comment, it's invalid
-                if string[-(i + 1)] != ' ':
+                if string[-(i + 1)] != " ":
                     break
 
                 # It is valid so return the comment separately
-                return stripped, ' ' + string[-i:]
+                return stripped, " " + string[-i:]
 
         elif ch == end:
             depth += 1
 
-    return string, ''
+    return string, ""
 
-def split_options(config: Config, string: str, sep: Optional[str], bracket_ranges: list[tuple[int, int]]) -> list[Choice]:
+
+def split_options(
+    config: Config,
+    string: str,
+    sep: Optional[str],
+    bracket_ranges: list[tuple[int, int]],
+) -> list[Choice]:
     """
     Split a string on a separator, trim whitespace, and remove a comment
     delimited by square brackets.
@@ -67,9 +73,10 @@ def split_options(config: Config, string: str, sep: Optional[str], bracket_range
     for part in util.split_except_for_ranges(string, sep, bracket_ranges):
         s = part.strip()
         if s:
-            stripped.append(split_comment(s, '[', ']', config.answer_choice_comments))
+            stripped.append(split_comment(s, "[", "]", config.answer_choice_comments))
 
     return stripped
+
 
 def pick_separator(config: Config, correct: str, correct_bracket_ranges: list[tuple[int, int]]) -> Optional[str]:
     """Pick a separator based on the separators config option."""
@@ -80,31 +87,39 @@ def pick_separator(config: Config, correct: str, correct_bracket_ranges: list[tu
 
     return None
 
+
 def format_separator(sep: Optional[str]) -> str:
-    if sep == ';' or sep == ',':
-        return f'{sep} '
-    elif sep and sep != ' ':
-        return f' {sep} '
+    if sep == ";" or sep == ",":
+        return f"{sep} "
+    elif sep and sep != " ":
+        return f" {sep} "
     else:
-        return ' '
+        return " "
+
 
 def withClass(c: str, s: str) -> str:
-    return f"<span class={c}>{html.escape(s)}</span>" if s else ''
+    return f"<span class={c}>{html.escape(s)}</span>" if s else ""
+
 
 def good(s: str) -> str:
-    return withClass('typeGood', s)
+    return withClass("typeGood", s)
+
 
 def minor_error(s: str) -> str:
-    return withClass('typePass', s)
+    return withClass("typePass", s)
+
 
 def bad(s: str) -> str:
-    return withClass('typeBad', s)
+    return withClass("typeBad", s)
+
 
 def missed(s: str) -> str:
-    return withClass('typeMissed', s)
+    return withClass("typeMissed", s)
+
 
 def not_code(s: str) -> str:
-    return f"</code>{s}<code>" if s else ''
+    return f"</code>{s}<code>" if s else ""
+
 
 # TODO: consider refactoring this into a DiffRenderer class
 def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[str]) -> tuple[bool, int]:
@@ -112,8 +127,8 @@ def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[s
 
     has_error = False
     correct_count = 0
-    given_elem = ''
-    correct_elem = ''
+    given_elem = ""
+    correct_elem = ""
 
     given_index = 0
     correct_index = 0
@@ -128,12 +143,12 @@ def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[s
         if given_start != given_index:
             printed_given_error_last = False
 
-        given_elem += good(''.join(pair.given[given_index:given_start]))
-        correct_elem += good(''.join(pair.correct[correct_index:correct_start]))
+        given_elem += good("".join(pair.given[given_index:given_start]))
+        correct_elem += good("".join(pair.correct[correct_index:correct_start]))
         correct_count += correct_start - correct_index
 
-        error_text = ''.join(pair.given[given_start:given_end])
-        missing_text = ''.join(pair.correct[correct_start:correct_end])
+        error_text = "".join(pair.given[given_start:given_end])
+        missing_text = "".join(pair.correct[correct_start:correct_end])
 
         if error.kind == ErrorKind.REGULAR:
             if error_text:
@@ -143,7 +158,7 @@ def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[s
             elif error.report and not printed_given_error_last:
                 has_error = True
                 printed_given_error_last = True
-                given_elem += bad('-')
+                given_elem += bad("-")
 
             correct_elem += missed(missing_text)
         elif error.kind == ErrorKind.MINOR:
@@ -155,8 +170,8 @@ def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[s
         given_index = given_end
         correct_index = correct_end
 
-    given_elem += good(''.join(pair.given[given_index:]))
-    correct_elem += good(''.join(pair.correct[correct_index:]))
+    given_elem += good("".join(pair.given[given_index:]))
+    correct_elem += good("".join(pair.correct[correct_index:]))
     correct_count += len(pair.correct) - correct_index
 
     # If a comment wasn't diffed, add it back
@@ -171,25 +186,26 @@ def render_diffs(pair: ChoicePair, given_elems: list[str], correct_elems: list[s
     # Return whether there was any error or not
     return has_error, correct_count
 
+
 def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     """Display the corrections for a type-in answer."""
 
     # Replace consecutive spaces with a single space
-    given = config.space_re.sub(' ', given)
-    correct = config.space_re.sub(' ', correct)
+    given = config.space_re.sub(" ", given)
+    correct = config.space_re.sub(" ", correct)
 
     # Normalize using NFC to make comparison consistent
-    given = ucd.normalize('NFC', given)
-    correct = ucd.normalize('NFC', correct)
+    given = ucd.normalize("NFC", given)
+    correct = ucd.normalize("NFC", correct)
 
     # Remove comments in parentheses
-    correct, correct_comment = split_comment(correct, '(', ')', config.answer_comments)
+    correct, correct_comment = split_comment(correct, "(", ")", config.answer_comments)
 
     # Only separate comment for given if present for correct
     if correct_comment:
-        given, given_comment = split_comment(given, '(', ')', config.answer_comments)
+        given, given_comment = split_comment(given, "(", ")", config.answer_comments)
     else:
-        given_comment = ''
+        given_comment = ""
 
     # Find bracket ranges in both answers (if config option enabled)
     if config.ignore_separators_in_brackets:
@@ -220,7 +236,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
             render_diffs(ChoicePair(config, empty_choice, pair.choice), given_elems, correct_elems)
         else:
             has_error = True
-            given_elems.append(bad(''.join(pair.choice)))
+            given_elems.append(bad("".join(pair.choice)))
 
     # If there was an error and some of the correct answer choices were missing,
     # the user may have just forgotten to type a separator.
@@ -233,7 +249,11 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
 
         alt_given_elems: list[str] = []
         alt_correct_elems: list[str] = []
-        alt_has_error, alt_correct_count = render_diffs(ChoicePair(config, (alt_given, ''), (alt_correct, '')), alt_given_elems, alt_correct_elems)
+        alt_has_error, alt_correct_count = render_diffs(
+            ChoicePair(config, (alt_given, ""), (alt_correct, "")),
+            alt_given_elems,
+            alt_correct_elems,
+        )
 
         # If the diff without splitting is more correct, then don't split
         if alt_correct_count - length_diff > correct_count:
@@ -247,10 +267,10 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     if given_comment:
         given = given_comment.strip()
         correct = correct_comment.strip()
-        has_error |= render_diffs(ChoicePair(config, (given, ''), (correct, '')), given_elems, correct_elems)[0]
+        has_error |= render_diffs(ChoicePair(config, (given, ""), (correct, "")), given_elems, correct_elems)[0]
 
     sep = not_code(html.escape(format_separator(sep)))
-    res = '<div id=typeans><code>'
+    res = "<div id=typeans><code>"
 
     # Only show the given part if there was an error
     if has_error:
@@ -263,7 +283,7 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
                 res += sep
             res += elem
 
-        res += '<br><span id=typearrow>&darr;</span><br>'
+        res += "<br><span id=typearrow>&darr;</span><br>"
 
     # Combine the diffs for all "correct" parts
     start = True
@@ -278,9 +298,9 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
     if correct_comment and not given_comment:
         res += not_code(html.escape(correct_comment))
 
-    res += '</code></div>'
+    res += "</code></div>"
 
     # Merge adjacent code tags
-    res = code_close_open_re.sub('', res)
+    res = code_close_open_re.sub("", res)
 
     return res

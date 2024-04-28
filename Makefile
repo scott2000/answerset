@@ -3,10 +3,12 @@ OUTPUT_FILE = answerset.ankiaddon
 TEST_REPORT_FILE = pytest-junit.xml
 
 GENERATED_FILES = $(TEST_REPORT_FILE) $(OUTPUT_FILE)
-CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache .mypy_cache .coverage
+CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache .mypy_cache .ruff_cache .coverage
 INSTALL_DIR = ~/Library/'Application Support'/Anki2/addons21/answerset
 
 COVERAGE_FLAGS = --cov=answerset --cov-fail-under=95 --cov-report=term-missing
+
+RUFF_OUTPUT_FORMAT = full
 
 build: clean test $(OUTPUT_FILE)
 
@@ -25,6 +27,7 @@ test: check
 
 check:
 	mypy -p answerset -p test --strict
+	ruff check --output-format=$(RUFF_OUTPUT_FORMAT)
 
 $(OUTPUT_FILE): $(SOURCE_FILES)
 	zip -j $@ $^

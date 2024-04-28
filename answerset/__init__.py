@@ -25,18 +25,21 @@ from typing import Any
 from .compare import compare_answer_no_html
 from .config import Config
 
+
 def get_config() -> Config:
     try:
         import aqt
+
         return Config(aqt.mw.addonManager.getConfig(__name__) if aqt.mw else None)
     except:
         return Config()
+
 
 # Load user config
 user_config = get_config()
 
 # Custom CSS for numeric comparisons
-new_css = '<style>.typePass { background-color: #ffe49b; }</style>'
+new_css = "<style>.typePass { background-color: #ffe49b; }</style>"
 
 # Up to Anki 2.1.54
 try:
@@ -45,7 +48,7 @@ try:
     def correct(self: Reviewer, given: str, correct: str, **kwargs: Any) -> str:
         return new_css + compare_answer_no_html(user_config, correct, given)
 
-    Reviewer.correct = correct # type: ignore
+    Reviewer.correct = correct  # type: ignore
 except:
     pass
 
@@ -68,6 +71,6 @@ try:
 
         return new_css + compare_answer_no_html(user_config, expected, provided)
 
-    Collection.compare_answer = compare_answer # type: ignore
+    Collection.compare_answer = compare_answer  # type: ignore
 except:
     pass

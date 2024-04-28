@@ -1,0 +1,21 @@
+preview = true
+line-length = 120
+
+[lint]
+select = [
+    "E",
+    "F",
+    "UP",
+    "B",
+    "COM",
+    "SIM",
+    "I",
+    "Q",
+    "T201",
+    "RUF005",
+    "RUF017",
+    "RUF018",
+    "RUF019",
+    "RUF021",
+]
+ignore = ["E501", "E721", "E722"]

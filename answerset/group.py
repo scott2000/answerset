@@ -1,19 +1,21 @@
 import unicodedata as ucd
 
+
 def is_combining(ch: str) -> bool:
     """Check if a character is a Unicode combining mark."""
 
-    return ucd.category(ch).startswith('M')
+    return ucd.category(ch).startswith("M")
+
 
 def group_combining(string: str) -> list[str]:
     """Group combining characters with the previous character."""
 
     parts = []
-    current = ''
+    current = ""
     for ch in string:
         if is_combining(ch):
             if not current:
-                current = '\xa0'
+                current = "\xa0"
 
             current += ch
         else:
@@ -27,9 +29,6 @@ def group_combining(string: str) -> list[str]:
 
     return parts
 
-def has_multiple_chars(string: str) -> bool:
-    for i in range(1, len(string)):
-        if not is_combining(string[i]):
-            return True
 
-    return False
+def has_multiple_chars(string: str) -> bool:
+    return any(not is_combining(string[i]) for i in range(1, len(string)))
