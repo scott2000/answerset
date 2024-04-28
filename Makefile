@@ -6,7 +6,7 @@ GENERATED_FILES = $(TEST_REPORT_FILE) $(OUTPUT_FILE)
 CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache .mypy_cache .coverage
 INSTALL_DIR = ~/Library/'Application Support'/Anki2/addons21/answerset
 
-COVERAGE_FLAGS = --cov=answerset --cov-fail-under=90 --cov-report=term-missing
+COVERAGE_FLAGS = --cov=answerset --cov-fail-under=95 --cov-report=term-missing
 
 build: clean test $(OUTPUT_FILE)
 
