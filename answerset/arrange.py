@@ -12,61 +12,72 @@ class UnmatchedChoice:
     choice: Choice
 
 class Arranger:
-    __slots__ = 'config', 'given', 'correct', 'cached_pairs', 'closest', 'assigned', 'used'
+    __slots__ = 'config', 'given', 'correct', 'cached_pairs', 'closest_to_given', 'assigned_to_given', 'used_correct'
 
     def __init__(self, config: Config, given: list[Choice], correct: list[Choice]) -> None:
         self.config = config
         self.given = given
         self.correct = correct
-        self.cached_pairs: dict[tuple[int, int], ChoicePair] = {}
-        self.closest: dict[int, int] = {}
-        self.assigned: dict[int, int] = {}
-        self.used: set[int] = set()
 
-    def get_choice_pair(self, i: int, j: int) -> ChoicePair:
+        # ChoicePairs are created when needed to avoid doing unnecessary work
+        self.cached_pairs: dict[tuple[int, int], ChoicePair] = {}
+
+        # The closest "correct" choice to each "given" choice is saved between
+        # iterations to improve efficiency. After the first iteration, it is
+        # only be necessary to find a new closest choice if two "given" choices
+        # were closest to the same "correct" choice.
+        self.closest_to_given: dict[int, int] = {}
+
+        # Final assignments from "given" to "correct" choices
+        self.assigned_to_given: dict[int, int] = {}
+
+        # Set of already used "correct" choices
+        self.used_correct: set[int] = set()
+
+    def get_choice_pair(self, given_index: int, correct_index: int) -> ChoicePair:
         """Find the ChoicePair for a "given" part and a "correct" part."""
 
-        if (i, j) in self.cached_pairs:
-            return self.cached_pairs[(i, j)]
+        if (given_index, correct_index) in self.cached_pairs:
+            return self.cached_pairs[(given_index, correct_index)]
 
-        pair = ChoicePair(self.config, self.given[i], self.correct[j])
-        self.cached_pairs[(i, j)] = pair
+        pair = ChoicePair(self.config, self.given[given_index], self.correct[correct_index])
+        self.cached_pairs[(given_index, correct_index)] = pair
         return pair
 
-    def best_choice_pair_for(self, i: int) -> Optional[ChoicePair]:
+    def best_choice_pair_for(self, given_index: int) -> Optional[ChoicePair]:
         """Find the best ChoicePair for a specific "given" part."""
 
         # Check for already found best ChoicePair
-        if i in self.closest and self.closest[i] not in self.used:
-            return self.get_choice_pair(i, self.closest[i])
+        if given_index in self.closest_to_given and self.closest_to_given[given_index] not in self.used_correct:
+            return self.get_choice_pair(given_index, self.closest_to_given[given_index])
 
         # Check for exact matches
-        for j in range(len(self.correct)):
+        for correct_index in range(len(self.correct)):
             # Skip "correct" parts which were already used
-            if j in self.used:
+            if correct_index in self.used_correct:
                 continue
 
-            pair = self.get_choice_pair(i, j)
+            pair = self.get_choice_pair(given_index, correct_index)
             if pair.is_exact_match():
-                self.closest[i] = j
+                self.closest_to_given[given_index] = correct_index
                 return pair
 
         # Find the closest "correct" part
         closest = None
         closest_choice_pair: Optional[ChoicePair] = None
-        for j in range(len(self.correct)):
+        for correct_index in range(len(self.correct)):
             # Skip "correct" parts which were already used
-            if j in self.used:
+            if correct_index in self.used_correct:
                 continue
 
-            pair = self.get_choice_pair(i, j)
+            pair = self.get_choice_pair(given_index, correct_index)
             if pair.is_better_than(closest_choice_pair):
-                closest = j
+                closest = correct_index
                 closest_choice_pair = pair
 
         # Remember the closest value and return the choice pair
         if closest is not None:
-            self.closest[i] = closest
+            self.closest_to_given[given_index] = closest
         return closest_choice_pair
 
     def step(self) -> bool:
@@ -76,24 +87,24 @@ class Arranger:
         """
 
         # If all "given" parts are assigned, we are done
-        if len(self.assigned) == len(self.given):
+        if len(self.assigned_to_given) == len(self.given):
             return False
 
         # If all "correct" parts are used, we are done
-        if len(self.used) == len(self.correct):
+        if len(self.used_correct) == len(self.correct):
             return False
 
         # Find closest pair of "given" and "correct"
         closest = None
         closest_choice_pair: Optional[ChoicePair] = None
-        for i in range(len(self.given)):
+        for given_index in range(len(self.given)):
             # Skip "given" parts which are already assigned
-            if i in self.assigned:
+            if given_index in self.assigned_to_given:
                 continue
 
-            pair = self.best_choice_pair_for(i)
+            pair = self.best_choice_pair_for(given_index)
             if pair is not None and pair.is_better_than(closest_choice_pair):
-                closest = i
+                closest = given_index
                 closest_choice_pair = pair
 
                 if pair.is_exact_match():
@@ -103,9 +114,9 @@ class Arranger:
             return False
 
         # Record the assignment
-        target = self.closest[closest]
-        self.assigned[closest] = target
-        self.used.add(target)
+        target = self.closest_to_given[closest]
+        self.assigned_to_given[closest] = target
+        self.used_correct.add(target)
 
         return True
 
@@ -114,16 +125,16 @@ class Arranger:
 
         # Put "given" parts and their matching "correct" parts first
         parts: list[Union[ChoicePair, UnmatchedChoice]] = []
-        for i in range(len(self.given)):
-            if i in self.assigned:
-                parts.append(self.get_choice_pair(i, self.assigned[i]))
+        for given_index in range(len(self.given)):
+            if given_index in self.assigned_to_given:
+                parts.append(self.get_choice_pair(given_index, self.assigned_to_given[given_index]))
             else:
-                parts.append(UnmatchedChoice(False, self.given[i]))
+                parts.append(UnmatchedChoice(False, self.given[given_index]))
 
         # Put all unused "correct" parts after
-        for j in range(len(self.correct)):
-            if j not in self.used:
-                parts.append(UnmatchedChoice(True, self.correct[j]))
+        for correct_index in range(len(self.correct)):
+            if correct_index not in self.used_correct:
+                parts.append(UnmatchedChoice(True, self.correct[correct_index]))
 
         return parts
 
