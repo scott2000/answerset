@@ -96,6 +96,10 @@ next closest, and so on until there are no more pairs.
 
 ## Changelog
 
+2024-05-04:
+
+* Improved handling of extra answer choice separators.
+
 2024-04-28:
 
 * Use diff algorithm while matching answer choices to ensure best diff.
