@@ -239,14 +239,16 @@ def compare_answer_no_html(config: Config, correct: str, given: str) -> str:
             has_error = True
             given_elems.append(bad("".join(pair.choice)))
 
-    # If there was an error and some of the correct answer choices were missing,
-    # the user may have just forgotten to type a separator.
-    if has_error and sep and len(given_elems) < len(correct_elems):
+    # If there was an error and the number of elements is different, the user
+    # may have just forgotten to type a separator, or an extra separator may
+    # have been interpreted that shouldn't have been.
+    if has_error and sep:
         alt_given = given.strip()
         alt_correct = correct.strip()
 
-        original_length = sum(len(answer) + len(comment) for answer, comment in correct_split)
-        length_diff = max(0, len(alt_correct) - original_length)
+        original_given_length = sum(len(answer) + len(comment) for answer, comment in given_split)
+        original_correct_length = sum(len(answer) + len(comment) for answer, comment in correct_split)
+        length_diff = max(0, len(alt_given) - original_given_length, len(alt_correct) - original_correct_length)
 
         alt_given_elems: list[str] = []
         alt_correct_elems: list[str] = []

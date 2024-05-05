@@ -171,3 +171,38 @@ def test_compare_duplicate_5() -> None:
     given = "aaa, bbb"
     result = compare_answer_no_html(test_config, correct, given)
     assert result == "<div id=typeans><code><span class=typeGood>aaa</span><span class=typeMissed>-</span></code>, <code><span class=typeGood>bbb</span><span class=typeMissed>.</span></code>, <code><span class=typeMissed>bbb-</span></code>, <code><span class=typeMissed>aaa.</span></code></div>"
+
+
+def test_missing_separator_1() -> None:
+    correct = "abc, def, ghi"
+    given = "abcdefghi"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == "<div id=typeans><code><span class=typeGood>abc</span><span class=typeBad>-</span><span class=typeGood>def</span><span class=typeBad>-</span><span class=typeGood>ghi</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>abc</span><span class=typeMissed>, </span><span class=typeGood>def</span><span class=typeMissed>, </span><span class=typeGood>ghi</span></code></div>"
+
+
+def test_missing_separator_2() -> None:
+    correct = "abc, def, ghi"
+    given = "abc, defghi"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == "<div id=typeans><code><span class=typeGood>abc, def</span><span class=typeBad>-</span><span class=typeGood>ghi</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>abc, def</span><span class=typeMissed>, </span><span class=typeGood>ghi</span></code></div>"
+
+
+def test_extra_separator_1() -> None:
+    correct = "abc def ghi"
+    given = "abc, def, ghi"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == "<div id=typeans><code><span class=typeGood>abc</span><span class=typeBad>,</span><span class=typeGood> def</span><span class=typeBad>,</span><span class=typeGood> ghi</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>abc</span><span class=typeGood> def</span><span class=typeGood> ghi</span></code></div>"
+
+
+def test_extra_separator_2() -> None:
+    correct = "abc def ghi"
+    given = "abc, def ghi"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == "<div id=typeans><code><span class=typeGood>abc</span><span class=typeBad>,</span><span class=typeGood> def ghi</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>abc</span><span class=typeGood> def ghi</span></code></div>"
+
+
+def test_missing_and_extra_separator() -> None:
+    correct = "abc, defghi"
+    given = "abcdef, ghi"
+    result = compare_answer_no_html(test_config, correct, given)
+    assert result == "<div id=typeans><code><span class=typeGood>abc</span><span class=typeBad>-</span><span class=typeGood>def</span><span class=typeBad>, </span><span class=typeGood>ghi</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>abc</span><span class=typeMissed>, </span><span class=typeGood>def</span><span class=typeGood>ghi</span></code></div>"
