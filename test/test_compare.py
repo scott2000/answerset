@@ -156,7 +156,7 @@ def test_compare_duplicate_3() -> None:
     correct = "aaa"
     given = "aaa, aaa"
     result = compare_answer_no_html(test_config, correct, given)
-    assert result == "<div id=typeans><code><span class=typeGood>aaa</span><span class=typeBad>, aaa</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>aaa</span></code></div>"
+    assert result == "<div id=typeans><code><span class=typeGood>aaa</span></code>, <code><span class=typeBad>aaa</span><br><span id=typearrow>&darr;</span><br><span class=typeGood>aaa</span></code></div>"
 
 
 def test_compare_duplicate_4() -> None:

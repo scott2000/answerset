@@ -81,11 +81,12 @@ def split_options(
 def pick_separator(config: Config, correct: str, correct_bracket_ranges: list[tuple[int, int]]) -> Optional[str]:
     """Pick a separator based on the separators config option."""
 
+    sep = None
     for sep in config.separators:
         if util.has_separator(correct, sep, correct_bracket_ranges):
             return sep
 
-    return None
+    return sep
 
 
 def format_separator(sep: Optional[str]) -> str:
