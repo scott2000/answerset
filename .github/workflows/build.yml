@@ -33,9 +33,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov ruff mypy aqt[qt6]
 
-      - name: Test and build add-on
+      - name: Type-check, lint, and test add-on
         run: |
-          make build RUFF_OUTPUT_FORMAT=github
+          make test RUFF_OUTPUT_FORMAT=github
+
+      - name: Build answerset.ankiaddon
+        run: |
+          make build
 
       - name: Create test-results directory
         run: |

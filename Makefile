@@ -4,13 +4,14 @@ TEST_REPORT_FILE = pytest-junit.xml
 
 GENERATED_FILES = $(TEST_REPORT_FILE) $(OUTPUT_FILE)
 CACHE_DIRS = answerset/__pycache__ test/__pycache__ .pytest_cache .mypy_cache .ruff_cache .coverage
-INSTALL_DIR = ~/Library/'Application Support'/Anki2/addons21/answerset
+ADDONS_DIR = ~/.local/share/Anki2/addons21
+INSTALL_DIR = $(ADDONS_DIR)/answerset
 
 COVERAGE_FLAGS = --cov=answerset --cov-fail-under=95 --cov-report=term-missing
 
 RUFF_OUTPUT_FORMAT = full
 
-build: clean test $(OUTPUT_FILE)
+build: $(OUTPUT_FILE)
 
 install: $(SOURCE_FILES)
 	[ -d $(INSTALL_DIR) ] || mkdir $(INSTALL_DIR)
