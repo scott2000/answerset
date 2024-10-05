@@ -78,7 +78,7 @@ This add-on is implemented as a monkey patch replacing
 `Collection.compare_answer` (Anki 2.1.56+) or `Reviewer.correct` (up to Anki
 2.1.54), which are responsible for generating the differences. Since it replaces
 these functions, it is not guaranteed to work in future updates. I have tested
-it in Anki 2.1.40 through Anki 23.12.1.
+it in Anki 2.1.40 through Anki 24.06.3.
 
 The diffs between "given" and "correct" answer choices are rendered using a
 modified version of the [Longest Common Subsequence][LCS], with a preference for
@@ -95,6 +95,10 @@ next closest, and so on until there are no more pairs.
 [LCS]: https://en.wikipedia.org/wiki/Longest_common_subsequence
 
 ## Changelog
+
+2024-10-05:
+
+* Fix add-on to work with latest beta version of Anki.
 
 2024-04-28:
 

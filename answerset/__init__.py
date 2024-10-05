@@ -45,7 +45,13 @@ new_css = "<style>.typePass { background-color: #ffe49b; }</style>"
 try:
     from aqt.reviewer import Reviewer
 
-    def correct(self: Reviewer, given: str, correct: str, **kwargs: Any) -> str:
+    def correct(
+        self: Reviewer,
+        given: str,
+        correct: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
         return new_css + compare_answer_no_html(user_config, correct, given)
 
     Reviewer.correct = correct  # type: ignore
@@ -58,7 +64,14 @@ try:
     from anki.collection import Collection
     from anki.utils import html_to_text_line
 
-    def compare_answer(self: Collection, expected: str, provided: str) -> str:
+    # TODO: handle "combining" argument
+    def compare_answer(
+        self: Collection,
+        expected: str,
+        provided: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
         # Strip AV tags if possible
         try:
             if aqt.mw:
