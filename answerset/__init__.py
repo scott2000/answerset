@@ -58,11 +58,53 @@ try:
 except:
     pass
 
-# Anki 2.1.56+ (correction was moved to Rust backend)
+
+def compare_answer_html(config: Config, correct: str, given: str) -> str:
+    """Remove HTML tags and AV tags before comparing"""
+    # Strip AV tags if possible
+    try:
+        import aqt
+
+        correct = aqt.mw.col.media.strip_av_tags(correct)
+    except:
+        pass
+
+    try:
+        from anki.utils import html_to_text_line
+
+        correct = html_to_text_line(correct)
+    except:
+        pass
+
+    return compare_answer_no_html(config, correct, given)
+
+
+# Anki 25.03+ (hooks were created in Anki to avoid monkey patching)
 try:
-    import aqt
+    from aqt.gui_hooks import (  # type: ignore
+        reviewer_will_compare_answer,
+        reviewer_will_render_compared_answer,
+    )
+
+    def deactivate_default_rendering(
+        expected_provided_tuple: tuple[str, str], type_pattern: str,
+    ) -> tuple[str, str]:
+        return "", ""
+
+    reviewer_will_compare_answer.append(deactivate_default_rendering)
+
+    def render_compare_answer(
+        output: str, initial_expected: str, initial_provided: str, type_pattern: str,
+    ) -> str:
+        return new_css + compare_answer_html(
+            user_config, initial_expected, initial_provided,
+        )
+
+    reviewer_will_render_compared_answer.append(render_compare_answer)
+
+# Anki 2.1.56+ (correction was moved to Rust backend)
+except ImportError:
     from anki.collection import Collection
-    from anki.utils import html_to_text_line
 
     # TODO: handle "combining" argument
     def compare_answer(
@@ -72,18 +114,9 @@ try:
         *args: Any,
         **kwargs: Any,
     ) -> str:
-        # Strip AV tags if possible
-        try:
-            if aqt.mw:
-                expected = aqt.mw.col.media.strip_av_tags(expected)
-        except:
-            pass
-
-        # Strip HTML tags
-        expected = html_to_text_line(expected)
-
-        return new_css + compare_answer_no_html(user_config, expected, provided)
+        return new_css + compare_answer_html(user_config, expected, provided)
 
     Collection.compare_answer = compare_answer  # type: ignore
+
 except:
     pass
