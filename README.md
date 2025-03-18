@@ -74,11 +74,10 @@ add-on config page in Anki.
 
 ## Implementation Details
 
-This add-on is implemented as a monkey patch replacing
-`Collection.compare_answer` (Anki 2.1.56+) or `Reviewer.correct` (up to Anki
-2.1.54), which are responsible for generating the differences. Since it replaces
-these functions, it is not guaranteed to work in future updates. I have tested
-it in Anki 2.1.40 through Anki 24.06.3.
+For Anki 25.03+, this add-on is implemented using the
+`reviewer_will_compare_answer` and `reviewer_will_render_compared_answer` hooks.
+In older versions of Anki, it is implemented using monkey patching instead since
+these hooks were not implemented yet.
 
 The diffs between "given" and "correct" answer choices are rendered using a
 modified version of the [Longest Common Subsequence][LCS], with a preference for
@@ -95,6 +94,10 @@ next closest, and so on until there are no more pairs.
 [LCS]: https://en.wikipedia.org/wiki/Longest_common_subsequence
 
 ## Changelog
+
+2025-03-18:
+
+* Use newly-created hooks to avoid monkey patching for Anki 25.03+. (@chel-ou)
 
 2024-10-05:
 
