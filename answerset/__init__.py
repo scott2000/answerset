@@ -81,7 +81,7 @@ def compare_answer_html(config: Config, correct: str, given: str) -> str:
 
 # Anki 25.03+ (hooks were created in Anki to avoid monkey patching)
 try:
-    from aqt.gui_hooks import (  # type: ignore
+    from aqt.gui_hooks import (
         reviewer_will_compare_answer,
         reviewer_will_render_compared_answer,
     )
